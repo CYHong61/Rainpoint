@@ -1,0 +1,1699 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script>window.RP_CONFIG = { aiEndpoint: "" };</script>
+<title>레인 포인트 관리자 대시보드</title>
+<meta name="description" content="레인 포인트 관리자 대시보드: 서울 8개 구 빗물 잠재량, 빗물이용시설 현황, 보상 설계, 참여 검증, 운영 추천">
+<meta name="theme-color" content="#13704f">
+<link rel="icon" href="../app/icons/icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{margin:0}img{max-width:100%}</style>
+
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+  :root {
+    --bg: #eef2f0; --card: #ffffff; --ink: #14231c; --sub: #56675e; --faint: #8a9a91;
+    --accent: #13704f; --warn: #9a5b12; --line: #d6dfda; --soft: #e3ebe6;
+    --ctx-fill: #dde5e0; --ctx-line: #c7d2cc; --gu-line: #14231c; --water: #f1f4f2; --nodata: #c9d1cc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1613; --card: #16201b; --ink: #e8efeb; --sub: #9fb1a7; --faint: #6f8278;
+      --accent: #4cc99a; --warn: #e0a55a; --line: #26342d; --soft: #1d2a23;
+      --ctx-fill: #1a241f; --ctx-line: #2a3831; --gu-line: #e8efeb; --water: #121a16; --nodata: #2b3530;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1613; --card: #16201b; --ink: #e8efeb; --sub: #9fb1a7; --faint: #6f8278;
+    --accent: #4cc99a; --warn: #e0a55a; --line: #26342d; --soft: #1d2a23;
+    --ctx-fill: #1a241f; --ctx-line: #2a3831; --gu-line: #e8efeb; --water: #121a16; --nodata: #2b3530;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans KR", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-feature-settings: "tnum"; line-height: 1.5;
+    padding-block: 28px 60px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  header { margin-bottom: 18px; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+  header .t { max-width: 70ch; }
+  header #guSeg { width: 100%; }
+  h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -0.4px; font-weight: 700; }
+  .sub { color: var(--sub); font-size: 13.5px; }
+
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+
+  .seg { display: inline-flex; background: var(--soft); border-radius: 9px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+  .seg button {
+    border: 0; background: transparent; color: var(--sub); font: inherit; font-size: 12.5px;
+    padding: 6px 11px; border-radius: 7px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
+  .seg button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .seg.big button { font-size: 13.5px; padding: 8px 14px; }
+
+  .controls { display: grid; gap: 18px; grid-template-columns: 1fr 1fr; padding: 16px 20px; margin-bottom: 14px; }
+  @media (max-width: 600px) { .controls { grid-template-columns: 1fr; } }
+  .control label { font-size: 13px; color: var(--sub); display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .cap-hint {
+    margin-top: 8px; padding: 8px 10px; border-radius: 9px; background: var(--bar-bg, rgba(127,127,127,.12));
+    font-size: 12px; color: var(--sub); display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  }
+  .cap-hint b { color: var(--accent); font-size: 13px; }
+  .cap-hint button {
+    margin-left: 4px; padding: 3px 9px; font-size: 11.5px; border-radius: 7px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink); cursor: pointer; font-family: inherit;
+  }
+  .cap-hint button:hover { border-color: var(--accent); color: var(--accent); }
+  .cap-hint-sub { flex-basis: 100%; font-size: 10.5px; opacity: .75; }
+  .control label b { color: var(--accent); font-weight: 700; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); margin: 0 -20px -16px; grid-column: 1 / -1; }
+  @media (max-width: 760px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { padding: 12px 20px 14px; border-right: 1px solid var(--line); }
+  .stat:last-child { border-right: 0; }
+  @media (max-width: 760px) { .stat:nth-child(2) { border-right: 0; } .stat:nth-child(-n+2) { border-bottom: 1px solid var(--line); } }
+  .stat .k { font-size: 12px; color: var(--sub); }
+  .stat .v { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .stat .v.accent { color: var(--accent); }
+
+  .mapcard { display: grid; grid-template-columns: minmax(0, 1fr) 280px; margin-bottom: 14px; overflow: hidden; }
+  @media (max-width: 900px) { .mapcard { grid-template-columns: 1fr; } }
+  .mapzone { position: relative; padding: 14px; border-right: 1px solid var(--line); min-width: 0; }
+  @media (max-width: 900px) { .mapzone { border-right: 0; border-bottom: 1px solid var(--line); } }
+  .maptop { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .maptop h2 { font-size: 15px; margin: 0; font-weight: 600; }
+
+  svg.map { width: 100%; height: auto; display: block; background: var(--water); border-radius: 10px; }
+  .ctx path { fill: var(--ctx-fill); stroke: var(--ctx-line); stroke-width: 1.2; }
+  .ctx text { fill: var(--faint); font-size: 18px; font-weight: 500; text-anchor: middle; }
+  .dong { stroke: var(--card); stroke-width: 1.8; cursor: pointer; transition: fill .25s ease, opacity .2s; outline: none; }
+  .dong:hover, .dong:focus-visible { stroke: var(--ink); stroke-width: 3; }
+  .dong.nodata { fill: var(--nodata); cursor: default; }
+  .dong.dim, .lbl.dim, .hatch.dim { opacity: .28; }
+  .gu-outline { fill: none; stroke: var(--gu-line); stroke-width: 2.4; pointer-events: none; opacity: .85; }
+  .gu-name { fill: var(--ink); font-size: 26px; font-weight: 700; text-anchor: middle; pointer-events: none; opacity: .55; letter-spacing: 2px; }
+  .lbl { pointer-events: none; text-anchor: middle; font-weight: 600; transition: opacity .2s; }
+  .lbl .n { font-size: 16px; }
+  .lbl .val { font-size: 14px; font-weight: 500; }
+  .lbl.sm .n { font-size: 12px; } .lbl.sm .val { font-size: 10.5px; }
+  .lbl.xs .n { font-size: 9.5px; } .lbl.xs .val { display: none; }
+  .lbl.hide { display: none; }
+  .sel-ring { fill: none; stroke: var(--ink); stroke-width: 4.5; pointer-events: none; }
+  @media (max-width: 600px) {
+    .lbl .n { font-size: 20px; }
+    .lbl.sm .n { font-size: 15px; }
+    .lbl.xs { display: none; }
+    .lbl .val { display: none; }
+    .ctx text { font-size: 28px; }
+    .gu-name { font-size: 40px; }
+    .mapzone { padding: 12px 10px; }
+  }
+
+  .tip {
+    position: absolute; pointer-events: none; background: var(--ink); color: var(--card);
+    font-size: 12.5px; padding: 7px 10px; border-radius: 8px; white-space: nowrap;
+    opacity: 0; transform: translate(-50%, calc(-100% - 12px)); transition: opacity .1s;
+  }
+  .tip b { font-weight: 700; }
+
+  .legend { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 11.5px; color: var(--sub); flex-wrap: wrap; }
+  .legend .ramp { flex: 1; min-width: 120px; height: 10px; border-radius: 5px; }
+  .legend .key { display: inline-flex; align-items: center; gap: 5px; }
+  .legend .key i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 1px solid var(--line); }
+  .legend .key i.hatch { background-image: repeating-linear-gradient(45deg, var(--ink) 0 1.5px, transparent 1.5px 5px); }
+  .legend .key i.nd { background: var(--nodata); }
+
+  .detail { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+  .detail .gu { font-size: 12.5px; color: var(--sub); }
+  .detail .dn { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.2; }
+  .detail .rank { font-size: 12.5px; color: var(--sub); margin-top: 2px; }
+  .detail dl { margin: 0; display: grid; gap: 10px; }
+  .detail dl div { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 8px; font-size: 13.5px; }
+  .detail dt { color: var(--sub); }
+  .detail dd { margin: 0; font-weight: 600; text-align: right; }
+  .note { font-size: 12.5px; color: var(--sub); background: var(--soft); border-radius: 9px; padding: 10px 12px; }
+  .note b { color: var(--ink); }
+  .note.warn { color: var(--warn); }
+
+  .guRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-bottom: 14px; overflow: hidden; }
+  @media (max-width: 900px) { .guRow { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .guRow { grid-template-columns: 1fr; } }
+  .gucell { padding: 14px 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 -1px -1px 0; cursor: pointer; }
+  .gucell:hover, .gucell.on { background: var(--soft); }
+  .gucell h3 { margin: 0 0 6px; font-size: 14.5px; font-weight: 700; }
+  .gucell .line { display: flex; justify-content: space-between; font-size: 13px; color: var(--sub); }
+  .gucell .line b { color: var(--ink); font-weight: 600; }
+
+  .tablecard { padding: 6px 14px 4px; }
+  .scroll-x { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; }
+  thead th { text-align: right; color: var(--sub); font-weight: 500; padding: 10px 6px; border-bottom: 1px solid var(--line); }
+  thead th:nth-child(-n+2), td:nth-child(-n+2) { text-align: left; }
+  tbody td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: right; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover, tbody tr.sel { background: var(--soft); }
+  tbody tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+  tbody tr.sel td:nth-child(2) { font-weight: 700; }
+  td.gu { color: var(--sub); }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
+  .tag { font-size: 11px; margin-left: 5px; }
+  .tag.cap { color: var(--accent); }
+  .tag.small { color: var(--warn); }
+
+  .qa { padding: 16px 20px; margin-top: 14px; display: grid; gap: 10px; }
+  .qa .head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .qa h2 { font-size: 14.5px; margin: 0; font-weight: 600; }
+  .qa p { margin: 0; font-size: 13px; color: var(--sub); max-width: 88ch; }
+  .qa p b { color: var(--ink); font-weight: 600; }
+  .switch { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+  .switch input { width: 16px; height: 16px; accent-color: var(--accent); }
+
+  footer { color: var(--sub); font-size: 11.5px; margin-top: 18px; line-height: 1.7; max-width: 100ch; }
+  @media (prefers-reduced-motion: reduce) { .dong, .lbl { transition: none; } }
+
+  table { color: var(--ink); }
+  /* AI 인사이트 */
+  .ai { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .ai-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ai-t { font-size: 13px; font-weight: 700; letter-spacing: -0.1px; }
+  .ai-badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--soft); color: var(--sub); }
+  .ai-badge.live { color: var(--accent); border-color: var(--accent); background: transparent; }
+  .ai-badge.busy::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--accent); vertical-align: 1px; animation: aiPulse 1s ease-in-out infinite; }
+  @keyframes aiPulse { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .ai-badge.busy::before { animation: none; } }
+  .ai-btn { margin-left: auto; font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+  .ai-btn:hover { background: var(--soft); }
+  .ai-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .ai-body { font-size: 13px; line-height: 1.7; background: var(--soft); border-radius: 10px; padding: 11px 13px; min-height: 5.2em; overflow-wrap: anywhere; }
+  .ai-body.wait { color: var(--sub); }
+  .ai-foot { font-size: 11.5px; color: var(--sub); line-height: 1.5; }
+  .ai-body { display: flex; flex-direction: column; gap: 10px; }
+  .ai-row { display: flex; flex-direction: column; gap: 2px; }
+  .ai-lab { font-size: 11px; font-weight: 700; letter-spacing: .4px; color: var(--accent); }
+  .ai-body.wait { display: block; }
+
+  [hidden] { display: none !important; }
+  .toplinks { display: flex; gap: 14px; font-size: 12.5px; margin-bottom: 8px; }
+  .toplinks a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .toplinks a:hover { text-decoration: underline; }
+  /* 통합 데모 추가 토큰: 강수(파랑), 경보(빨강), 시설 분포(청록 단계) */
+  :root { --rain: #2f6fa8; --alert: #b3372b; --alert-soft: #f6e3e0; --check-soft: #f5ead9; --ok-soft: #dfeee6; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --rain: #6aa9e0; --alert: #ef7d6f; --alert-soft: #3a211e; --check-soft: #33291b; --ok-soft: #1c3027; } }
+  :root[data-theme="dark"] { --rain: #6aa9e0; --alert: #ef7d6f; --alert-soft: #3a211e; --check-soft: #33291b; --ok-soft: #1c3027; }
+
+  .steps { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 0 0 14px; overflow: hidden; }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+  .steps button { font: inherit; text-align: left; border: 0; border-right: 1px solid var(--line); background: var(--card); color: var(--sub); padding: 10px 14px 11px; cursor: pointer; display: grid; gap: 1px; min-width: 0; }
+  .steps button:last-child { border-right: 0; }
+  .steps button .no { font-size: 11px; font-weight: 700; letter-spacing: .6px; color: var(--faint); }
+  .steps button .nm { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+  .steps button .ds { font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .steps button:hover { background: var(--soft); }
+  .steps button[aria-current="step"] { background: var(--soft); box-shadow: inset 0 -3px 0 var(--accent); }
+  .steps button[aria-current="step"] .no { color: var(--accent); }
+  .steps button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  @media (max-width: 640px) { .steps button .ds { display: none; } .steps button { padding: 8px 8px 9px; } .steps button .nm { font-size: 13px; } }
+
+  .sec { padding: 18px 20px; margin-bottom: 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .sec > *, .cols2 > *, .cols3 > * { min-width: 0; }
+  .sec > h2, .sechead h2 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: -.3px; text-wrap: balance; }
+  .sechead { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px 16px; flex-wrap: wrap; }
+  .lede { margin: 0; color: var(--sub); font-size: 13.5px; max-width: 78ch; }
+  .lede b { color: var(--ink); }
+  .src { font-size: 11.5px; color: var(--faint); margin: 0; }
+  .src b { color: var(--sub); font-weight: 600; }
+  .cols3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .cols2 { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .cols3, .cols2 { grid-template-columns: 1fr; } }
+  .box { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+  .box h3 { margin: 0; font-size: 13px; color: var(--sub); font-weight: 700; letter-spacing: .2px; }
+  .facts { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .facts li { display: grid; grid-template-columns: 74px 1fr; gap: 10px; align-items: baseline; font-size: 13px; color: var(--sub); }
+  .facts li b { font-size: 18px; color: var(--ink); font-weight: 700; letter-spacing: -.3px; }
+  .why2 { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 0; }
+  .why2 td { padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
+  .why2 tr:last-child td { border-bottom: 0; }
+  .why2 td:first-child { color: var(--sub); width: 46%; }
+  .why2 td:last-child { font-weight: 600; }
+  .bars { display: grid; gap: 6px; }
+  .bar { display: grid; grid-template-columns: 52px 1fr 34px; gap: 8px; align-items: center; font-size: 12.5px; }
+  .bar .track { height: 9px; background: var(--soft); border-radius: 3px; overflow: hidden; }
+  .bar .fill { height: 100%; background: var(--accent); opacity: .85; }
+  .bar b { text-align: right; font-weight: 600; }
+
+  .sstats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .sstats .stat { border-right: 1px solid var(--line); padding: 10px 14px 12px; }
+  .sstats .stat:last-child { border-right: 0; }
+  @media (max-width: 760px) { .sstats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sstats .stat:nth-child(2) { border-right: 0; } .sstats .stat:nth-child(-n+2) { border-bottom: 1px solid var(--line); } }
+  .stat .s { font-size: 11.5px; color: var(--sub); }
+  .stat .v.alert { color: var(--alert); }
+
+  .controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 900px) { .controls { grid-template-columns: 1fr; } }
+  .cap-hint-sub2 { font-size: 11px; color: var(--sub); margin-top: 6px; }
+
+  .budget { padding: 16px 20px; margin-bottom: 14px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: 18px; }
+  @media (max-width: 900px) { .budget { grid-template-columns: 1fr; } }
+  .budget h2 { font-size: 14.5px; margin: 0 0 4px; font-weight: 700; }
+  .budget .lede { font-size: 12.5px; }
+  .numin { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--sub); margin-top: 10px; flex-wrap: wrap; }
+  .numin input { font: inherit; font-size: 13px; width: 90px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  .kvs { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+  .kvs div { border-bottom: 1px solid var(--line); padding-bottom: 6px; display: grid; gap: 1px; }
+  .kvs dt { font-size: 11.5px; color: var(--sub); }
+  .kvs dd { margin: 0; font-size: 15px; font-weight: 700; }
+  .btn { font: inherit; font-size: 12.5px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--card); cursor: pointer; font-weight: 600; }
+  .btn.ghost { background: var(--card); color: var(--ink); border-color: var(--line); font-weight: 500; }
+  .btn:hover { filter: brightness(1.06); }
+  .btn:focus-visible, .linkbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .linkbtn { font: inherit; font-size: 13px; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-align: left; font-weight: 600; }
+  ol.pick { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; counter-reset: p; }
+  ol.pick li { display: grid; grid-template-columns: 20px 1fr auto; gap: 8px; font-size: 13px; padding: 5px 6px; border-radius: 6px; cursor: pointer; }
+  ol.pick li::before { counter-increment: p; content: counter(p); color: var(--faint); font-size: 12px; }
+  ol.pick li i { font-style: normal; color: var(--sub); font-size: 12px; }
+  ol.pick li b { font-weight: 600; font-size: 12.5px; }
+  ol.pick li:hover, ol.pick li:focus-visible { background: var(--soft); outline: none; }
+
+  .pts .pt { fill: var(--ink); stroke: var(--card); stroke-width: 1.6; pointer-events: none; opacity: .85; }
+  .maptools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .tog { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--sub); cursor: pointer; }
+  .tog input { width: 15px; height: 15px; accent-color: var(--accent); }
+  .facleg i { width: 14px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: -1px; }
+  .facleg .dotk { width: 7px; height: 7px; border-radius: 50%; background: var(--ink); }
+
+  .siteBar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 12.5px; color: var(--sub); background: var(--soft); border-radius: 10px; padding: 9px 12px; }
+  .siteBar label { display: inline-flex; gap: 8px; align-items: center; color: var(--ink); font-weight: 600; }
+  .siteBar input { font: inherit; font-size: 13px; width: 86px; padding: 4px 8px; border-radius: 7px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  .tag2 { font-size: 11px; font-weight: 700; color: var(--warn); border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; }
+
+  .chartbox { border: 1px solid var(--line); border-radius: 10px; padding: 10px 8px 6px; overflow-x: auto; }
+  .chartbox svg { display: block; width: 100%; height: auto; min-width: 520px; }
+  .ax { fill: var(--sub); font-size: 11.5px; font-family: inherit; }
+  .ax.small { font-size: 10.5px; fill: var(--faint); }
+  .ax.strong { fill: var(--ink); font-weight: 700; }
+  .grid { stroke: var(--line); stroke-width: 1; }
+  .base { stroke: var(--sub); stroke-width: 1; opacity: .5; }
+  .capline { stroke: var(--sub); stroke-width: 1.2; stroke-dasharray: 5 4; }
+  .rainbar { fill: var(--rain); opacity: .8; }
+  .lvl { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linejoin: round; }
+  .lvl.ghost { stroke: var(--faint); stroke-dasharray: 6 5; stroke-width: 2; }
+  .fband { fill: var(--alert); opacity: .13; }
+  .fband.chk { fill: var(--warn); }
+  .fdot { fill: var(--alert); stroke: var(--card); stroke-width: 2; }
+  .fdot.chk { fill: var(--warn); }
+  .mbar { fill: var(--faint); opacity: .55; }
+  .mbar.wet { fill: var(--rain); opacity: 1; }
+  .clegend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--sub); padding: 4px 6px 2px; }
+  .clegend .key { display: inline-flex; gap: 6px; align-items: center; }
+  .clegend i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }
+  .clegend i.ln { height: 0; border-top: 2.4px solid var(--accent); width: 18px; border-radius: 0; }
+  .clegend i.ln.ghost { border-top: 2px dashed var(--faint); }
+
+  .pill { white-space: nowrap; display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+  .pill.hold { background: var(--alert-soft); color: var(--alert); }
+  .pill.check { background: var(--check-soft); color: var(--warn); }
+  .pill.okp { background: var(--ok-soft); color: var(--accent); }
+  .vtable { min-width: 520px; }
+  .vgrid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+  @media (max-width: 900px) { .vgrid { grid-template-columns: 1fr; } }
+  .vtable td.why { text-align: left; color: var(--sub); }
+  .vtable td.empty { text-align: center; color: var(--sub); padding: 16px; }
+  .vtable tbody tr { cursor: default; }
+  .vtable thead th:nth-child(5), .vtable td:nth-child(5), .vtable thead th:nth-child(6) { text-align: left; }
+  .rules { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--sub); display: grid; gap: 4px; }
+  .rules b { color: var(--ink); }
+
+  .seasons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 600px) { .seasons { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .season { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
+  .season.on { border-color: var(--rain); }
+  .season .k { font-size: 12.5px; font-weight: 700; }
+  .season .k span { font-weight: 400; color: var(--sub); font-size: 11.5px; }
+  .season .v { font-size: 18px; font-weight: 700; }
+  .season.on .v { color: var(--rain); }
+  .season .s { font-size: 11.5px; color: var(--sub); }
+
+  .fc { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+  @media (max-width: 640px) { .fc { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .fc label { display: grid; gap: 3px; font-size: 11.5px; color: var(--sub); position: relative; }
+  .fc input { font: inherit; font-size: 14px; width: 100%; padding: 6px 26px 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  .fc i { position: absolute; right: 8px; bottom: 8px; font-style: normal; font-size: 11px; color: var(--faint); pointer-events: none; }
+  .opmsg { display: grid; gap: 6px; font-size: 13.5px; }
+  .opmsg p { margin: 0; }
+  .opmsg .pill { justify-self: start; }
+  .notice { font-size: 13.5px; line-height: 1.7; background: var(--soft); border-radius: 10px; padding: 11px 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .rowflex { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .rowflex .grow { flex: 1; }
+  .ctrl2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  @media (max-width: 600px) { .ctrl2 { grid-template-columns: 1fr; } }
+  .ctrl2 label { font-size: 13px; color: var(--sub); display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .ctrl2 label b { color: var(--accent); }
+  details.more { font-size: 12.5px; color: var(--sub); }
+  details.more summary { cursor: pointer; color: var(--ink); font-weight: 600; }
+  details.more ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+
+</style>
+<div class="wrap">
+  <header>
+    <div class="t">
+      <nav class="toplinks"><a href="../">← 레인 포인트 홈</a><a href="../app/">주민 앱 보기</a></nav>
+      <h1>레인 포인트 관리자 대시보드</h1>
+      <div class="sub">강남·서초·송파·강동·관악·광진·동작·성동 82개 법정동, 공동주택 44,556개 동·993,983세대(건축HUB 표제부)와 서울시 빗물이용시설 472곳을 함께 봅니다. 현황 → 보상 설계 → 참여 검증 → 운영 추천 순서로 넘겨 보세요.</div>
+    </div>
+    <div class="seg big" role="group" aria-label="보는 범위" id="guSeg">
+      <button type="button" data-gu="all" aria-pressed="true">8개 구 전체</button>
+      <button type="button" data-gu="강남구" aria-pressed="false">강남구</button>
+      <button type="button" data-gu="서초구" aria-pressed="false">서초구</button>
+      <button type="button" data-gu="송파구" aria-pressed="false">송파구</button>
+      <button type="button" data-gu="강동구" aria-pressed="false">강동구</button>
+      <button type="button" data-gu="관악구" aria-pressed="false">관악구</button>
+      <button type="button" data-gu="광진구" aria-pressed="false">광진구</button>
+      <button type="button" data-gu="동작구" aria-pressed="false">동작구</button>
+      <button type="button" data-gu="성동구" aria-pressed="false">성동구</button>
+    </div>
+  </header>
+
+  <nav class="panel steps" id="steps" aria-label="데모 단계">
+    <button type="button" data-tab="status"><span class="no">01 현황</span><span class="nm">시설 분포</span><span class="ds">시설은 있는데 쓰이지 않는다</span></button>
+    <button type="button" data-tab="reward"><span class="no">02 보상</span><span class="nm">보상 설계</span><span class="ds">모인 양 기준 · 예산 맞춤</span></button>
+    <button type="button" data-tab="verify"><span class="no">03 검증</span><span class="nm">참여 검증</span><span class="ds">수위 센서 이상 유입 탐지</span></button>
+    <button type="button" data-tab="operate"><span class="no">04 운영</span><span class="nm">운영 추천</span><span class="ds">계절 편차 · 예보 기반 알림</span></button>
+  </nav>
+
+  <section class="panel sec" data-tabs="status">
+    <div class="sechead">
+      <h2>시설은 늘었지만, 쓰이지 않고 있습니다</h2>
+      <button type="button" class="btn" data-go="reward">보상 설계로 →</button>
+    </div>
+    <p class="lede">서울시가 공개한 빗물이용시설 위치를 분석 대상 82개 법정동에 겹쳤습니다. 잠재량은 모든 공동주택 지붕 기준이고, 이 지도는 지금 시설이 실제로 있는 곳을 보여 줍니다. 레인 포인트는 <b>이미 설치된 시설이 실제로 운영되도록</b> 모인 양에 보상하는 제도입니다.</p>
+    <div class="sstats">
+      <div class="stat"><div class="k">서울 빗물이용시설</div><div class="v">1,225곳</div><div class="s">서울시 공간정보, 2022.4</div></div>
+      <div class="stat"><div class="k">분석 대상 8개 구</div><div class="v">472곳</div><div class="s">학교·공공건물 포함</div></div>
+      <div class="stat"><div class="k">시설이 있는 법정동</div><div class="v">71 / 82</div><div class="s">11개 동은 시설 0곳</div></div>
+      <div class="stat"><div class="k">공동주택 시설 미사용</div><div class="v">약 60%</div><div class="s">다른 시설은 약 30% 안팎</div></div>
+    </div>
+    <div class="cols3">
+      <div class="box">
+        <h3>연구에서 확인된 운영 실태</h3>
+        <ul class="facts">
+          <li><b>60%</b><span>공동주택 빗물이용시설 가운데 쓰지 않는 비율</span></li>
+          <li><b>92%</b><span>쓰는 곳의 용도가 조경용수. 청소·화장실은 약 3%</span></li>
+          <li><b>905곳</b><span>2,043개 시설 중 사용량이 집계되지 않은 곳</span></li>
+        </ul>
+        <p class="src">박윤경 외(2022), 「빗물이용시설의 빗물이용 활성화 방안 연구」, 한국수자원학회 학술발표회. 통계는 2016년 환경부 자료 기준.</p>
+      </div>
+      <div class="box">
+        <h3>안 쓰이는 이유와 레인 포인트의 답</h3>
+        <table class="why2"><tbody>
+          <tr><td>필요할 때 물이 부족함 (1위)</td><td>예보 기반 운영 추천, 모인 양 기준 보상</td></tr>
+          <tr><td>운영비 부담 (2위)</td><td>모인 양만큼 포인트로 운영 동기</td></tr>
+          <tr><td>쓴 양을 아무도 확인 안 함</td><td>수위 센서로 실적 자동 기록·검증</td></tr>
+          <tr><td>설치가 목표인 정책</td><td>운영 실적에 보상</td></tr>
+        </tbody></table>
+      </div>
+      <div class="box">
+        <h3>구별 시설 수 (8개 구 472곳)</h3>
+        <div class="bars" id="guBars"></div>
+        <p class="src">설치 의무(물재이용법 시행령 제10조)는 2011년 이후 신축분부터라 2010년대 개발 지구에 시설이 몰려 있습니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel controls" data-tabs="reward">
+    <div class="control">
+      <label for="refundRate">환급률 (기준산정액 대비) <b id="refundLabel">60%</b></label>
+      <input type="range" id="refundRate" min="10" max="100" step="5" value="60">
+    </div>
+    <div class="control">
+      <label for="cap">세대당 연간 지급 상한 <b id="capLabel">11,000원</b></label>
+      <input type="range" id="cap" min="1000" max="80000" step="1000" value="11000">
+      <div class="cap-hint">
+        📊 현재 환급률(<span id="hintRate">60</span>%) 기준 데이터 근거 상한선(75th percentile):
+        <b id="hintP75">11,019</b>원
+        <button type="button" id="applyP75">이 값 적용</button>
+        <span class="cap-hint-sub">8개 구 <span id="hintN">80</span>개 동 분포 기준 · 세대수 100 미만 동 제외</span>
+      </div>
+    </div>
+    <div class="control">
+      <label for="capture">포집률 (지붕 빗물 중 저류조로 모으는 비율) <b id="captureLabel">100%</b></label>
+      <input type="range" id="capture" min="10" max="100" step="10" value="100">
+      <div class="cap-hint-sub2">100%는 모든 공동주택 지붕 빗물을 다 모은다는 최대치입니다. 실제 시설은 472곳뿐이라 시범 단계 지출은 훨씬 작습니다.</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">연간 확보 빗물량</div><div class="v" id="statVolume">14,215,547 ㎥</div><div class="s">하수도로 덜 흘러가는 양(잠재)</div></div>
+      <div class="stat"><div class="k">기준 산정액 합계</div><div class="v" id="statBase">156.4억 원</div></div>
+      <div class="stat"><div class="k">개인 지급 총액</div><div class="v accent" id="statPaid">87.4억 원</div></div>
+      <div class="stat"><div class="k">관리비 귀속 총액</div><div class="v" id="statSurplus">6.45억 원</div></div>
+    </div>
+  </section>
+
+
+  <section class="panel budget" data-tabs="reward">
+    <div>
+      <h2>예산 맞춤 설계</h2>
+      <p class="lede">연간 예산을 넣으면 그 안에 들어오는 환급률과 데이터 근거 상한을 제안합니다. 위의 범위(구)와 포집률을 그대로 따릅니다.</p>
+      <div class="control" style="margin-top:12px">
+        <label for="budget">연간 예산 <b id="budgetLabel">30억 원</b></label>
+        <input type="range" id="budget" min="1" max="160" step="1" value="30">
+      </div>
+      <div class="numin"><label for="pilotHH">시범 단지 세대수</label><input type="number" id="pilotHH" min="1" max="10000" step="100" value="1000"></div>
+    </div>
+    <div>
+      <div id="budgetOut"></div>
+      <div class="rowflex" style="margin-top:10px"><button type="button" class="btn" id="applyBudget">이 조건을 위 슬라이더에 적용</button></div>
+    </div>
+    <div>
+      <h2>우선 시범 후보 동</h2>
+      <p class="lede">시설이 이미 있어 바로 실측할 수 있는 동을 시설 수, 세대수 순으로 골랐습니다. 누르면 지도에서 보입니다.</p>
+      <ol class="pick" id="pilotList" style="margin-top:8px"></ol>
+    </div>
+  </section>
+  <section class="panel guRow" id="guRow" data-tabs="reward"></section>
+
+  <section class="panel mapcard" data-tabs="status reward">
+    <div class="mapzone" id="mapzone">
+      <div class="maptop">
+        <h2 id="mapTitle">동별 지도</h2>
+        <div class="maptools"><label class="tog"><input type="checkbox" id="ptToggle" checked> 시설 위치 점</label>
+          <input type="text" id="dongSearch" list="dongList" placeholder="동 이름 검색…" style="font:inherit; font-size:12.5px; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); width:130px;">
+          <datalist id="dongList"></datalist>
+          <button type="button" id="mapImgBtn" style="display:none; padding: 6px 10px; font-size: 12.5px; cursor: pointer; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); font-family: inherit;">🖼 이미지 저장</button>
+          <div class="seg" role="group" aria-label="지도 색상 기준" id="metricSeg">
+            <button type="button" data-metric="fac" aria-pressed="false" hidden>빗물이용시설 수</button>
+            <button type="button" data-metric="perHH" aria-pressed="true">세대당 지급액</button>
+            <button type="button" data-metric="paid" aria-pressed="false">개인지급 총액</button>
+            <button type="button" data-metric="surplus" aria-pressed="false">관리비 귀속액</button>
+          </div>
+        </div>
+      </div>
+      <svg class="map" id="map" role="img" aria-label="서울 8개 구 법정동별 빗물 크레딧 지도" viewBox="0 0 1500 1033"></svg>
+      <div class="tip" id="tip"></div>
+      <div class="legend facleg" id="facLegend" hidden></div>
+      <div class="legend" id="payLegend">
+        <span id="legLo">평균 3.4억↓</span><div class="ramp" id="ramp"></div><span id="legHi">평균 3.4억↑</span>
+        <span class="key" id="avgkey">· 평균 <b id="legAvg">787만원</b></span>
+        <span class="key" id="capkey" style="display:none;"><i class="hatch"></i>상한 도달</span>
+      </div>
+    </div>
+    <aside class="detail" id="detail" aria-live="polite"></aside>
+  </section>
+
+  <section class="panel tablecard" data-tabs="reward">
+    <div class="maptop" style="margin:6px 2px 2px;">
+      <h2 style="font-size:14.5px;">동별 상세 표</h2>
+      <button type="button" class="seg" id="csvBtn" style="display:none; padding: 6px 12px; font-size: 12.5px; cursor: pointer; border: 1px solid var(--line);">⬇ CSV로 내보내기</button>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <thead>
+          <tr><th>구</th><th>동</th><th>세대수</th><th>시설</th><th>세대당 지급액</th><th>개인지급 총액</th><th>관리비 귀속</th><th>평균 대비</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel qa" data-tabs="reward">
+    <div class="head">
+      <h2>데이터 보정</h2>
+      <label class="switch"><input type="checkbox" id="cleanToggle" checked> 이상치 보정 적용</label>
+    </div>
+    <p>서초·송파와 새로 추가한 5개 구(강동·관악·광진·동작·성동) 원자료의 건물별 상세를 점검해 명백한 입력 오류를 보정했습니다. 끄면 원자료 합계로 계산합니다.</p>
+    <p><b>송파구 마천동 357-25번지</b>: 4세대 건물의 건축면적이 830,110㎡로 기재되어 있어 제외했습니다. 이 한 건이 마천동 전체 면적의 90%를 차지해 세대당 몫이 16만 원대로 튀었습니다.</p>
+    <p><b>단지 면적 중복 기재</b>: 가락쌍용아파트(가락동 140), 건영아파트(문정동 72-3), 한강극동아파트(풍납동 508), 동아한가람아파트(풍납동 506)는 동마다 단지 전체 건축면적이 똑같이 들어가 있어 단지당 한 번만 반영했습니다. 가락동 면적은 431,695㎡에서 222,205㎡로, 문정동은 162,470㎡에서 138,847㎡로, 풍납동은 195,052㎡에서 83,380㎡로 바뀝니다.</p>
+    <p><b>5개 구 단지 면적 중복 기재</b>: 같은 번지에서 3개 동 이상이 2,500㎡ 이상의 똑같은 건축면적을 갖는 13개 단지는 단지 전체 면적이 동마다 반복된 것으로 보고 단지당 한 번만 반영했습니다. 가장 큰 사례는 광진구 구의동의 현대프라임아파트(631-1, 15개 동 × 10,472㎡)와 구의현대2단지아파트(611, 15개 동 × 8,918㎡)로, 구의동 면적이 570,737㎡에서 291,441㎡로 바뀝니다. 이 밖에 구의동 현대아파트(610), 자양동 자양우성3차(516)·자양7차우성(783-1), 관악구 신림동 건영아파트(1703-1), 동작구 대방동 대방동현대(502)·대방주공영구임대(503), 상도동 삼호아파트(408), 성동구 마장동 왕십리삼성(817), 성수동1가 한진타운(704), 응봉동 신동아(275), 행당동 신동아(344)가 해당합니다. 세대수는 바뀌지 않습니다.</p>
+    <p>강남구는 동별 합계만 있어 같은 점검을 하지 못했습니다. 세대수가 100세대 미만인 서초구 염곡동(22세대)과 원지동(7세대)은 표본이 작아 세대당 금액이 크게 흔들립니다.</p>
+  </section>
+
+
+  <section class="panel sec" data-tabs="verify">
+    <div class="sechead">
+      <h2>참여 검증: 수위 데이터로 이상 유입을 자동으로 거릅니다</h2>
+      <span class="tag2">모의 데이터</span>
+    </div>
+    <p class="lede">보상은 저류조에 <b>모인 양</b>에 주므로, 모인 양이 진짜 빗물인지가 제도의 신뢰를 좌우합니다. 저류조 수위 센서와 사용량 계량기 값으로 매일 유입량을 계산하고, 그날 강수와 지붕 면적으로 설명되지 않는 유입은 지급을 보류합니다. 아래는 5~6월 평년 강수 총량에 맞춘 가상 강수와 가상 센서값입니다.</p>
+    <div class="siteBar"><label>예시 단지 <input type="number" class="siteHH" min="100" max="5000" step="100" value="1000"> 세대</label><span class="siteInfo"></span></div>
+    <div class="rowflex">
+      <button type="button" class="btn ghost" id="vNew">새 모의 데이터</button>
+      <label class="tog"><input type="checkbox" id="injectToggle" checked> 이상 사례 넣기 (외부 급수·다른 배관 유입·센서 정지)</label>
+    </div>
+    <div class="sstats" id="vStats"></div>
+    <div>
+      <div class="chartbox"><svg id="vChart" role="img" aria-label="일별 강수와 저류량, 이상 판정일 표시"></svg></div>
+      <div class="clegend"><span class="key"><i style="background:var(--rain)"></i>강수</span><span class="key"><i class="ln"></i>저류량(센서)</span><span class="key"><i style="background:var(--alert);opacity:.5"></i>지급 보류</span><span class="key"><i style="background:var(--warn);opacity:.5"></i>센서 점검</span></div>
+    </div>
+    <div class="cols2 vgrid">
+      <div class="box">
+        <h3>판정 결과</h3>
+        <div class="scroll-x"><table class="vtable"><thead><tr><th>날짜</th><th>강수</th><th>측정 유입</th><th>허용 상한</th><th>판정</th><th>사유</th></tr></thead><tbody id="vTable"></tbody></table></div>
+      </div>
+      <div class="box">
+        <h3>판정 기준</h3>
+        <ul class="rules">
+          <li><b>측정 유입</b> = 하루 저류량 변화 + 그날 사용량(계량기)</li>
+          <li><b>허용 상한</b> = 강수 × 집수면적(지붕에 떨어진 비 전부) + 센서 오차(저류조의 2%)</li>
+          <li>비가 1mm 미만인데 오차 이상 늘면 <b>외부 급수 의심 → 보류</b></li>
+          <li>허용 상한을 넘으면 <b>다른 배관 유입 의심 → 보류</b></li>
+          <li>8mm 이상 왔는데 수위가 그대로면 <b>센서 정지 의심 → 점검</b></li>
+        </ul>
+        <p class="lede" id="vEff" style="font-size:12.5px"></p>
+        <p class="src">실서비스는 시간 단위 수위로 판정하고, 보류분은 관리사무소 소명 후 지급합니다. 집수율 추정은 3mm 이상 비 온 정상일(저류조가 가득 차지 않은 날)의 측정 유입 ÷ (강수 × 집수면적)의 중앙값입니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel sec" data-tabs="operate">
+    <div class="sechead"><h2>비는 여름에 몰립니다</h2></div>
+    <p class="lede">서울 연강수량의 약 4분의 3이 6~9월에 내리고 겨울에는 5% 안팎입니다. 그래서 레인 포인트는 쓴 양이 아니라 <b>모인 양</b>에 보상하고, 여름 실적이 겨울까지 이어지도록 <b>연 단위로 정산</b>합니다. 12~2월은 정산에서 빼고 동파 방지를 위한 운영 중단을 허용합니다.</p>
+    <div class="seasons" id="seasons"></div>
+    <div class="chartbox"><svg id="mChart" role="img" aria-label="서울 월별 평년 강수량"></svg></div>
+    <p class="src">기상청 서울 평년값(1991~2020) 월별 강수량, 연 1,417.9mm.</p>
+  </section>
+
+  <section class="panel sec" data-tabs="operate">
+    <div class="sechead">
+      <h2>예보 기반 운영 추천</h2>
+      <span class="tag2">예보는 예시 입력</span>
+    </div>
+    <p class="lede">미사용 1위 이유는 필요할 때 물이 없다는 것입니다. 강수 예보와 단지 물수지를 함께 계산해, 호우 전에는 미리 쓰고 비워 더 받게 하고, 가뭄 전에는 아껴 쓰도록 관리사무소에 알립니다.</p>
+    <div class="siteBar"><label>예시 단지 <input type="number" class="siteHH" min="100" max="5000" step="100" value="1000"> 세대</label><span class="siteInfo"></span></div>
+    <div class="ctrl2">
+      <div><label for="stock">현재 저류량 <b id="stockLabel"></b></label><input type="range" id="stock" min="0" max="100" step="5" value="60"></div>
+      <div><label for="dailyUse">평소 하루 사용량(조경·청소) <b id="useLabel"></b></label><input type="range" id="dailyUse" min="0" max="60" step="1" value="25"></div>
+    </div>
+    <div class="rowflex">
+      <span style="font-size:13px;color:var(--sub)">7일 강수 예보</span>
+      <div class="seg" id="presetSeg" role="group" aria-label="예보 예시">
+        <button type="button" data-p="storm" aria-pressed="true">호우 예보</button>
+        <button type="button" data-p="normal" aria-pressed="false">보통 비</button>
+        <button type="button" data-p="dry" aria-pressed="false">건조 7일</button>
+      </div>
+    </div>
+    <div class="fc" id="fcInputs"></div>
+    <div class="sstats" id="opStats"></div>
+    <div class="cols2">
+      <div>
+        <div class="chartbox"><svg id="oChart" role="img" aria-label="7일 저류량 전망"></svg></div>
+        <div class="clegend" id="oLegend"></div>
+      </div>
+      <div class="box">
+        <h3>추천</h3>
+        <div class="opmsg" id="opMsg"></div>
+        <div class="ai-h" style="margin-top:6px"><span class="ai-t">관리사무소 안내문</span><span class="ai-badge" id="noticeBadge">규칙 기반 문안</span></div>
+        <div class="notice" id="notice"></div>
+        <div class="rowflex"><button type="button" class="btn ghost" id="copyNotice">복사</button><button type="button" class="btn" id="noticeBtn" hidden>Claude로 안내문 다듬기</button></div>
+      </div>
+    </div>
+    <p class="src">실서비스는 기상청 단기예보 조회서비스(공공데이터포털)와 단지 수위 센서를 연동합니다. 데모에서는 예보값을 직접 넣거나 예시를 고릅니다. 유입량 = 강수 × 집수면적 × 0.85, 5mm 이상 오는 날은 조경 급수를 쉰다고 가정했습니다.</p>
+  </section>
+
+  <footer>
+    데이터 출처: 건축HUB(국토교통부) 건축물대장 표제부(2026.8 기준) · 기상청 서울 평년값(1991~2020, 연 1,417.9mm, 월별 값) · 서울특별시 빗물이용시설 공간정보(서울 열린데이터광장 SP_LGRC_AS, 2022-04-03 기준, 삭제 표시 40건 제외, 위치·등록번호만 있어 건물 용도와 용량은 알 수 없음) · 박윤경 외(2022) 한국수자원학회 학술발표회.<br>
+    경계: 행정안전부 도로명주소 법정동 경계(2015, southkorea/seoul-maps 재가공). 법령: 물의 재이용 촉진 및 지원에 관한 법률 시행령 제10조(설치 대상), 시행규칙 제4조(저류조 용량: 지붕 집수면적 × 0.05m 이상).<br>
+    산정식: 확보빗물량(㎥)=건축면적×연강수량×유출계수(0.85)×포집률 → 기준산정액=확보빗물량×1,100원/㎥(통합 수도요금 추정 범위 1,000~1,200원의 중간값) → 환급포인트=기준산정액×환급률 → 세대당지급액=min(환급포인트÷세대수, 상한) → 초과분은 관리비 귀속. 참여 검증과 운영 추천 화면의 강수·수위는 모의 또는 예시 입력값입니다.
+  </footer>
+
+</div>
+
+<script>
+
+const GEO = {"w":1500,"h":1033,"dongs":[{"gu":"동작구","name":"대방동","d":"M194.4,448.1L195.5,454.1L203.1,460.4L206.0,468.7L207.6,488.7L206.4,494.9L208.9,503.9L205.8,507.9L202.4,514.7L196.0,512.3L195.9,522.1L190.3,524.8L184.9,526.0L178.6,521.1L174.0,524.6L172.9,528.6L176.0,534.8L175.8,540.7L183.9,548.6L183.5,551.2L175.4,555.6L167.1,552.4L142.9,561.6L132.6,557.8L133.1,548.0L158.8,467.8L165.9,466.0L166.3,448.4L177.2,449.2Z","lx":179.8,"ly":490.5,"r":27.0},{"gu":"동작구","name":"흑석동","d":"M406.9,500.2L396.4,512.7L396.3,518.4L392.7,521.2L376.8,525.5L368.8,530.5L368.0,534.6L363.5,538.0L361.3,542.9L357.2,545.1L352.1,550.9L350.4,557.8L345.1,564.7L329.8,558.1L322.6,556.2L317.0,550.8L316.1,544.8L309.8,534.1L311.2,530.0L309.8,523.5L302.4,519.9L302.6,516.5L307.7,499.8L309.9,498.9L310.9,489.9L322.7,483.4L325.4,476.2L334.7,473.4L344.8,464.1L360.6,478.7L370.9,485.0L386.8,490.4Z","lx":341.2,"ly":511.5,"r":33.5},{"gu":"동작구","name":"상도동","d":"M307.7,499.8L302.6,516.5L302.4,519.9L309.8,523.5L311.2,530.0L309.8,534.1L316.1,544.8L317.0,550.8L322.6,556.2L329.8,558.1L345.1,564.7L347.3,575.3L350.0,581.9L346.4,585.4L342.2,594.1L336.7,588.5L329.8,589.4L327.3,595.6L322.4,599.8L311.5,603.4L303.2,608.5L292.9,598.5L285.5,596.5L278.2,592.3L278.0,588.0L271.7,588.6L268.8,586.3L264.3,590.0L256.4,592.3L255.9,596.4L242.1,598.6L237.5,593.9L229.4,598.3L224.8,597.3L215.7,599.7L209.7,594.7L201.8,592.3L194.7,593.7L181.6,586.8L179.3,578.1L181.9,564.8L175.4,555.6L183.5,551.2L183.9,548.6L176.2,541.3L176.0,534.8L172.9,528.6L174.0,524.6L178.6,521.1L184.9,526.0L190.3,524.8L195.9,522.1L196.0,512.3L202.4,514.7L205.8,507.9L208.9,503.9L214.8,502.8L223.6,509.7L226.7,513.7L237.2,512.8L256.9,503.5L269.1,503.8L270.4,508.2L273.1,504.0L280.4,503.4L287.3,496.4L290.8,496.8L292.5,500.4L285.5,507.5L283.5,514.7L264.7,527.6L271.5,536.9L280.3,541.4L287.9,553.0L294.6,546.3L302.0,543.3L300.7,524.6L296.4,518.7L301.3,510.9L301.2,503.1L296.1,505.5L292.6,496.4L300.1,492.2L303.7,498.9Z","lx":224.5,"ly":554.9,"r":41.0},{"gu":"관악구","name":"신림동","d":"M152.5,612.7L159.0,612.7L169.8,615.4L176.5,618.3L203.7,633.7L203.7,645.9L215.5,648.2L222.0,651.8L220.6,662.4L210.8,672.2L215.6,675.5L218.4,680.6L225.9,683.6L231.6,692.7L243.8,701.5L255.1,713.6L267.9,724.3L273.3,725.6L279.5,723.0L286.3,730.9L291.4,730.3L300.8,735.7L303.2,747.8L305.6,754.3L310.5,759.3L315.6,768.0L313.2,777.2L315.1,780.6L312.6,788.1L319.6,800.4L322.6,807.6L333.2,818.1L343.6,830.3L363.1,837.5L368.9,830.6L374.1,832.2L379.9,851.4L387.8,863.0L389.1,873.1L374.3,880.0L357.1,893.6L355.3,900.4L357.7,906.2L357.6,917.3L358.8,920.8L350.2,932.1L335.5,931.3L329.9,939.8L310.3,942.3L296.5,939.1L291.7,943.0L284.4,942.7L280.6,945.1L275.9,942.1L267.9,945.6L259.2,952.6L243.3,949.9L240.5,950.5L234.4,961.4L226.0,956.9L221.8,950.7L219.2,938.9L222.4,932.6L216.2,922.7L211.1,919.9L205.6,913.3L191.2,901.9L185.1,898.7L183.1,892.9L184.2,884.4L183.2,880.0L174.1,868.2L174.0,863.2L168.7,863.2L163.3,853.3L155.7,851.4L148.4,842.6L144.2,828.9L135.8,825.7L129.7,826.2L118.5,823.9L115.5,821.3L105.6,822.6L100.9,818.9L101.9,812.1L101.7,799.2L102.7,795.2L95.4,782.5L95.4,778.2L99.1,770.8L92.5,767.6L88.7,761.6L85.6,753.4L80.1,749.0L81.6,745.9L78.3,736.6L71.2,723.5L84.2,717.9L87.3,712.3L86.4,707.5L89.5,697.0L89.6,690.9L77.6,689.5L73.3,682.7L75.1,676.2L79.2,671.9L57.5,676.9L56.1,676.1L24.0,683.6L24.2,682.3L29.7,669.2L45.7,644.6L60.4,644.9L90.1,634.9L98.5,625.3L114.3,615.4L128.5,610.7L137.9,610.4Z","lx":229.0,"ly":799.1,"r":84.3},{"gu":"관악구","name":"봉천동","d":"M181.6,586.8L194.7,593.7L201.8,592.3L209.7,594.7L215.7,599.7L224.8,597.3L229.4,598.3L237.5,593.9L242.1,598.6L255.9,596.4L256.4,592.3L264.3,590.0L268.8,586.3L271.7,588.6L278.0,588.0L278.2,592.3L285.5,596.5L292.9,598.5L303.2,608.5L311.5,603.4L322.4,599.8L327.3,595.6L329.8,589.4L336.7,588.5L342.2,594.1L342.3,603.0L339.2,607.2L342.3,618.1L345.1,621.5L343.7,638.3L345.3,643.5L340.7,653.9L345.7,661.1L355.3,670.2L357.7,678.0L367.5,683.7L374.9,690.7L380.2,698.6L387.6,699.4L390.0,714.0L393.2,718.7L391.6,728.4L393.4,741.5L392.0,744.6L394.7,754.7L400.3,760.5L401.6,768.6L406.5,772.8L403.5,782.7L399.9,782.8L392.0,787.7L387.7,792.3L385.2,798.9L381.3,802.9L377.9,810.3L368.8,818.5L370.5,822.4L368.9,830.6L363.1,837.5L343.6,830.3L333.2,818.1L322.6,807.6L319.6,800.4L312.6,788.1L315.1,780.6L313.2,777.2L315.6,768.0L310.5,759.3L305.6,754.3L303.2,747.8L300.8,735.7L291.4,730.3L286.3,730.9L279.5,723.0L273.3,725.6L267.9,724.3L255.1,713.6L243.8,701.5L231.6,692.7L225.9,683.6L218.4,680.6L215.6,675.5L210.8,672.2L220.6,662.4L222.0,651.8L215.5,648.2L203.7,645.9L203.7,633.7L176.5,618.3L169.8,615.4L159.0,612.7L152.5,612.7L155.9,606.6L159.7,594.5L164.4,590.1L165.1,585.8L171.6,579.9Z","lx":284.8,"ly":662.7,"r":56.5},{"gu":"동작구","name":"본동","d":"M344.8,464.1L334.7,473.4L325.4,476.2L322.7,483.4L310.9,489.9L309.9,498.9L307.7,499.8L303.7,498.9L300.1,492.2L290.8,496.8L287.3,496.4L279.2,493.0L275.6,479.6L279.0,469.2L284.7,461.9L277.1,455.8L276.0,448.2L285.3,436.3L308.2,445.2Z","lx":305.1,"ly":468.3,"r":21.4},{"gu":"동작구","name":"동작동","d":"M464.6,549.2L452.1,567.6L451.3,595.5L446.2,597.6L436.2,592.5L432.3,587.4L420.2,583.1L415.5,583.4L410.9,580.6L404.2,584.9L401.4,590.5L393.8,591.6L373.8,587.3L360.2,590.8L350.0,581.9L347.3,575.3L345.1,564.7L350.4,557.8L352.1,550.9L357.2,545.1L361.3,542.9L363.5,538.0L368.0,534.6L368.8,530.5L376.8,525.5L392.7,521.2L396.3,518.4L396.4,512.7L406.9,500.2L412.9,503.1L427.8,506.1L439.2,506.2L439.2,518.8L436.3,521.4L439.9,531.0L447.5,535.1L459.0,543.7Z","lx":411.4,"ly":547.9,"r":32.6},{"gu":"동작구","name":"사당동","d":"M451.3,595.5L450.5,612.0L449.0,621.9L445.8,699.1L429.1,698.3L408.0,701.2L388.9,706.5L387.6,699.4L380.2,698.6L374.9,690.7L367.5,683.7L357.7,678.0L355.3,670.2L345.7,661.1L340.7,653.9L345.3,643.5L343.7,638.3L345.1,621.5L342.3,618.1L339.2,607.2L342.3,603.0L342.2,594.1L346.4,585.4L350.0,581.9L360.2,590.8L373.8,587.3L393.8,591.6L401.4,590.5L404.2,584.9L410.9,580.6L415.5,583.4L420.2,583.1L432.3,587.4L436.2,592.5L446.2,597.6Z","lx":397.5,"ly":642.3,"r":50.5},{"gu":"동작구","name":"노량진동","d":"M287.3,496.4L280.4,503.4L273.1,504.0L270.4,508.2L269.1,503.8L256.9,503.5L237.2,512.8L226.7,513.7L223.6,509.7L214.8,502.8L208.9,503.9L206.4,494.9L207.6,488.7L206.0,468.7L203.1,460.4L195.5,454.1L194.4,448.1L203.4,446.0L229.6,444.9L282.0,435.0L285.3,436.3L276.0,448.2L277.1,455.8L284.7,461.9L279.0,469.2L275.6,479.6L279.2,493.0Z","lx":239.3,"ly":476.0,"r":32.3},{"gu":"강남구","name":"논현동","d":"M663.9,519.5L643.7,466.0L638.7,444.7L682.2,421.7L738.2,399.3L762.7,482.2Z","lx":710.6,"ly":456.2,"r":42.5},{"gu":"동작구","name":"상도1동","d":"M292.6,496.4L296.1,505.5L301.2,503.1L301.3,510.9L296.4,518.7L300.7,524.6L302.0,543.3L294.6,546.3L287.9,553.0L280.3,541.4L271.5,536.9L264.7,527.6L283.5,514.7L285.5,507.5L292.5,500.4L290.8,496.8Z","lx":287.1,"ly":529.3,"r":13.8},{"gu":"동작구","name":"신대방동","d":"M175.4,555.6L181.9,564.8L179.3,578.1L181.6,586.8L171.6,579.9L165.1,585.8L164.4,590.1L159.7,594.5L155.9,606.6L152.5,612.7L137.9,610.4L128.5,610.7L114.3,615.4L98.5,625.3L90.1,634.9L60.4,644.9L45.7,644.6L63.2,617.6L67.7,612.5L84.6,584.9L89.5,574.7L95.1,571.3L105.1,570.0L128.3,563.7L132.6,557.8L142.9,561.6L167.1,552.4Z","lx":137.0,"ly":586.2,"r":24.1},{"gu":"강남구","name":"자곡동","d":"M1108.3,652.4L1115.0,665.7L1130.6,692.2L1120.7,696.8L1119.0,700.1L1105.6,708.0L1097.1,715.5L1079.3,704.4L1076.5,706.6L1079.9,713.2L1064.2,731.7L1059.9,732.2L1052.3,739.0L1046.8,737.3L1038.0,740.4L1019.0,740.2L1008.4,747.7L1004.2,748.1L993.0,752.4L988.5,751.9L985.3,742.6L980.5,736.2L972.6,733.3L968.2,722.9L969.9,708.2L971.8,705.6L979.3,700.5L989.6,701.1L997.2,694.4L1006.4,689.9L1009.7,692.1L1033.4,687.9L1041.2,688.2L1038.9,680.7L1039.8,674.6L1036.5,670.1L1039.3,663.0L1045.0,657.9L1052.8,656.0L1057.2,647.7L1068.2,643.7L1075.8,658.2L1082.8,658.9L1099.9,656.2L1103.2,657.3Z","lx":1095.4,"ly":683.8,"r":26.0},{"gu":"강남구","name":"역삼동","d":"M700.3,615.4L663.9,519.5L762.7,482.2L765.3,490.2L770.1,496.1L780.4,504.1L785.0,509.5L808.6,572.0L777.3,585.6L715.3,609.6L702.3,615.5Z","lx":732.6,"ly":548.0,"r":51.1},{"gu":"광진구","name":"능동","d":"M995.2,211.8L994.9,216.5L987.9,224.6L985.7,230.9L979.9,230.2L974.6,235.9L977.1,250.7L972.7,258.5L946.6,257.1L931.9,253.1L921.4,246.1L918.8,245.8L921.5,232.3L926.7,227.0L927.1,222.9L944.3,180.8L985.2,200.9L990.2,204.6Z","lx":957.3,"ly":216.3,"r":25.9},{"gu":"강동구","name":"고덕동","d":"M1412.9,179.8L1380.3,184.7L1312.8,196.6L1294.0,196.6L1276.6,195.4L1275.2,191.2L1276.8,178.0L1272.7,171.3L1283.6,159.1L1289.4,154.6L1284.1,140.3L1280.7,137.9L1280.4,128.7L1277.1,126.1L1281.3,112.8L1281.3,108.4L1298.4,108.4L1329.2,85.2L1338.9,79.4L1365.0,57.3L1375.6,67.8L1383.7,73.5L1384.3,77.8L1389.0,84.6L1393.1,93.6L1381.9,104.9L1383.1,112.6L1388.9,121.1L1386.9,124.6L1389.3,130.5L1399.2,137.7L1405.6,143.9L1408.7,151.5Z","lx":1338.7,"ly":140.9,"r":50.3},{"gu":"강동구","name":"암사동","d":"M1272.9,195.4L1270.2,196.2L1266.1,204.3L1262.3,207.2L1254.4,218.9L1260.6,221.7L1243.2,225.2L1237.9,228.4L1224.8,245.3L1189.2,226.1L1185.2,240.4L1162.4,233.9L1162.2,230.3L1141.4,227.1L1107.7,224.5L1120.7,200.6L1128.6,177.4L1137.3,166.1L1151.3,154.9L1165.9,140.2L1194.7,123.0L1223.6,111.5L1240.9,108.5L1281.3,108.4L1281.3,112.8L1277.1,126.1L1280.4,128.7L1280.7,137.9L1284.1,140.3L1289.4,154.6L1283.6,159.1L1272.7,171.3L1276.8,178.0L1275.2,191.2Z","lx":1215.7,"ly":176.0,"r":56.1},{"gu":"광진구","name":"군자동","d":"M918.8,245.8L898.2,239.6L883.0,237.6L915.0,166.4L944.3,180.8L927.1,222.9L926.7,227.0L921.5,232.3Z","lx":910.3,"ly":218.8,"r":17.1},{"gu":"강동구","name":"강일동","d":"M1464.1,202.8L1450.5,197.8L1435.1,196.0L1426.9,190.4L1416.2,189.9L1412.9,179.8L1408.7,151.5L1405.6,143.9L1399.2,137.7L1389.3,130.5L1386.9,124.6L1388.9,121.1L1383.1,112.6L1381.9,104.9L1393.1,93.6L1389.0,84.6L1384.3,77.8L1383.7,73.5L1375.6,67.8L1365.0,57.3L1389.1,40.7L1407.0,40.4L1415.1,38.9L1432.2,31.1L1443.1,24.0L1441.4,37.3L1433.7,43.9L1432.9,51.9L1435.1,62.0L1434.7,66.9L1445.8,86.4L1445.7,89.0L1452.7,105.3L1454.6,127.3L1462.7,143.3L1466.8,156.3L1466.8,164.8L1464.6,178.3L1465.2,188.3L1463.8,195.2Z","lx":1420.4,"ly":113.0,"r":32.6},{"gu":"서초구","name":"우면동","d":"M646.5,694.2L655.1,700.3L662.8,702.7L665.8,706.1L676.3,710.3L693.6,719.5L702.4,731.5L696.7,738.4L686.8,755.7L691.7,770.9L688.6,788.0L682.1,797.3L683.7,806.0L674.6,807.6L673.9,816.0L668.0,821.4L655.3,823.0L648.7,829.6L639.5,832.4L628.6,830.2L622.1,836.0L613.1,838.4L602.2,834.0L594.3,834.8L593.4,830.8L582.6,817.9L581.0,811.1L575.0,804.0L568.5,789.0L561.9,779.2L564.1,767.8L562.2,761.7L557.8,755.7L562.0,745.8L567.4,739.6L580.8,732.0L584.8,733.7L590.7,724.7L600.9,720.5L610.2,720.3L615.0,716.0L617.5,709.4L622.7,707.0L623.4,702.2L639.6,695.9Z","lx":627.6,"ly":773.9,"r":56.3},{"gu":"강남구","name":"청담동","d":"M820.1,364.0L845.8,374.2L872.8,387.1L863.9,409.4L856.7,407.7L829.9,419.4L749.5,437.6L738.2,399.3L746.6,369.5L762.2,374.5L768.3,353.5L770.4,354.3L776.3,330.1Z","lx":795.0,"ly":390.1,"r":36.1},{"gu":"강남구","name":"삼성동","d":"M883.8,414.1L890.2,482.1L878.2,484.7L788.9,519.2L785.0,509.5L780.4,504.1L770.1,496.1L765.3,490.2L749.5,437.6L829.9,419.4L856.7,407.7L863.9,409.4L872.8,387.1L883.2,390.3Z","lx":804.2,"ly":468.3,"r":42.0},{"gu":"강남구","name":"도곡동","d":"M826.7,628.0L783.6,660.5L766.8,672.1L763.4,677.2L751.2,643.1L751.9,641.9L712.9,648.7L700.3,615.4L702.3,615.5L715.3,609.6L777.3,585.6L808.6,572.0L822.0,607.6Z","lx":779.1,"ly":621.4,"r":34.0},{"gu":"강남구","name":"율현동","d":"M1149.4,724.4L1147.6,728.6L1151.9,737.5L1161.8,750.5L1154.2,756.7L1145.2,757.1L1134.6,762.3L1125.8,764.2L1117.4,761.1L1114.5,757.1L1104.7,752.9L1093.8,754.5L1086.7,757.3L1081.1,767.6L1072.9,765.4L1068.0,753.8L1064.6,751.4L1061.1,744.3L1052.3,739.0L1059.9,732.2L1064.2,731.7L1079.9,713.2L1076.5,706.6L1079.3,704.4L1097.1,715.5L1105.6,708.0L1119.0,700.1L1120.7,696.8L1130.6,692.2Z","lx":1120.5,"ly":730.6,"r":26.8},{"gu":"강동구","name":"천호동","d":"M1269.0,250.2L1258.8,284.9L1242.7,283.7L1236.4,287.2L1223.4,319.7L1163.6,296.3L1163.1,297.5L1145.1,284.3L1133.1,278.6L1115.4,272.0L1095.5,270.8L1107.3,246.5L1107.7,224.5L1141.4,227.1L1162.2,230.3L1162.4,233.9L1185.2,240.4L1189.2,226.1L1224.8,245.3L1237.9,228.4L1243.2,225.2L1260.6,221.7L1272.9,221.8Z","lx":1200.5,"ly":272.5,"r":35.5},{"gu":"강동구","name":"둔촌동","d":"M1278.7,440.1L1272.3,438.8L1245.5,423.9L1243.6,423.5L1223.6,411.6L1223.6,403.5L1245.4,330.0L1256.8,331.4L1263.2,330.1L1280.2,321.7L1281.5,322.8L1352.6,284.6L1342.8,295.9L1339.2,304.2L1330.6,315.5L1326.8,324.1L1321.9,331.9L1323.8,343.1L1321.0,346.9L1321.8,352.6L1317.5,364.9L1305.8,378.8L1301.0,382.8L1301.7,385.7L1292.5,405.9L1281.7,407.3L1277.2,422.1Z","lx":1271.4,"ly":364.4,"r":34.7},{"gu":"광진구","name":"중곡동","d":"M1059.9,167.3L1040.8,175.8L1034.6,182.0L1023.4,186.7L1002.6,209.0L995.2,211.8L990.2,204.6L985.2,200.9L908.1,162.9L916.8,133.1L931.0,111.7L937.9,86.2L963.9,89.6L976.2,92.4L978.1,95.5L985.3,95.7L1000.0,100.3L1022.4,93.5L1026.5,94.4L1030.2,89.8L1046.2,80.7L1053.4,74.2L1057.4,82.9L1064.8,83.7L1070.5,89.4L1066.5,98.0L1061.1,126.4L1060.3,134.9L1057.2,141.5L1055.0,152.5L1055.4,159.6Z","lx":991.5,"ly":149.0,"r":49.4},{"gu":"강동구","name":"상일동","d":"M1464.1,202.8L1463.5,207.8L1471.6,215.5L1472.6,219.8L1471.2,230.4L1472.3,235.5L1470.3,240.3L1471.1,250.1L1476.0,254.9L1474.7,257.5L1467.9,254.1L1463.1,248.7L1453.3,249.0L1440.3,254.2L1434.8,257.7L1425.6,255.3L1416.5,255.6L1404.5,260.3L1399.7,258.1L1390.3,257.7L1388.6,263.8L1370.9,259.1L1367.0,253.9L1354.5,256.7L1346.1,255.8L1333.9,252.0L1337.1,192.3L1412.9,179.8L1416.2,189.9L1426.9,190.4L1435.1,196.0L1450.5,197.8Z","lx":1394.1,"ly":220.4,"r":37.4},{"gu":"강남구","name":"개포동","d":"M948.7,586.4L910.8,601.7L912.0,608.5L924.6,638.0L932.7,633.2L936.9,637.5L933.7,646.5L926.1,657.2L920.4,673.1L909.2,680.8L910.8,688.7L915.7,693.7L918.1,701.5L931.2,707.9L928.9,712.4L922.9,719.0L914.0,724.1L909.6,728.5L899.8,732.3L895.6,735.1L894.0,734.3L887.1,736.2L885.1,738.3L874.9,742.6L871.0,745.3L866.2,746.2L864.4,747.5L857.2,745.4L855.9,747.0L852.4,747.5L840.3,746.2L827.3,750.8L824.5,750.9L821.5,748.7L815.5,753.2L810.9,752.9L799.9,757.8L797.9,757.8L799.6,750.1L797.3,743.5L796.2,742.7L788.2,741.8L787.2,740.7L798.2,730.5L768.7,694.0L763.4,677.2L766.8,672.1L783.6,660.5L830.1,625.5L841.1,619.4L850.7,616.5L880.1,609.7L886.5,606.6L894.7,600.4L906.9,585.5L915.6,584.4L917.5,581.1L920.3,572.3L938.7,564.8L939.2,563.7L951.0,572.2L954.2,577.3L948.4,584.1Z","lx":849.5,"ly":686.0,"r":59.9},{"gu":"강남구","name":"일원동","d":"M974.1,703.6L971.8,705.6L963.4,705.5L941.8,710.4L936.4,710.6L918.1,701.5L915.7,693.7L910.8,688.7L909.2,680.8L920.4,673.1L926.1,657.2L933.7,646.5L936.9,637.5L932.7,633.2L924.6,638.0L912.0,608.5L910.8,601.7L948.7,586.4L948.4,584.1L954.2,577.3L951.0,572.2L940.7,564.8L948.4,550.9L946.6,541.2L968.4,550.5L1022.4,569.6L1037.7,577.3L1035.7,579.2L1017.2,586.3L1008.4,590.9L1019.6,598.0L1007.7,600.7L997.2,604.3L1005.3,614.4L1006.4,622.9L999.1,629.2L982.6,630.0L975.9,634.0L978.2,639.0L982.3,661.8L981.9,670.7L976.7,677.3L973.7,694.6Z","lx":954.6,"ly":615.0,"r":28.4},{"gu":"강남구","name":"세곡동","d":"M1172.3,763.4L1160.3,772.3L1158.2,777.2L1151.3,782.9L1137.9,791.2L1135.5,795.8L1135.0,814.0L1129.9,814.4L1120.0,808.4L1116.5,805.0L1115.0,798.0L1109.1,794.7L1090.4,790.7L1081.8,789.7L1071.0,791.3L1073.2,797.9L1069.0,805.0L1062.6,807.1L1055.9,811.9L1055.4,816.6L1047.5,822.3L1044.3,829.6L1039.9,828.6L1024.5,828.5L1025.7,821.5L1022.9,815.1L1026.5,803.7L1026.8,798.9L1021.5,799.2L1014.2,797.1L1008.2,790.7L1008.1,773.7L1000.1,760.2L995.1,756.6L993.0,752.4L1004.2,748.1L1008.4,747.7L1019.0,740.2L1038.0,740.4L1046.8,737.3L1052.3,739.0L1061.1,744.3L1064.6,751.4L1068.0,753.8L1072.9,765.4L1081.1,767.6L1086.7,757.3L1093.8,754.5L1104.7,752.9L1114.5,757.1L1117.4,761.1L1125.8,764.2L1134.6,762.3L1145.2,757.1L1154.2,756.7L1161.8,750.5L1151.9,737.5L1147.6,728.6L1149.4,724.4Z","lx":1041.0,"ly":771.1,"r":30.8},{"gu":"강남구","name":"신사동","d":"M638.7,444.7L630.0,408.1L695.3,366.2L701.7,363.0L715.7,360.8L723.6,362.1L746.6,369.5L738.2,399.3L682.2,421.7ZM582.9,383.8L602.6,357.5L622.4,381.1L606.3,403.1Z","lx":709.0,"ly":385.7,"r":23.5},{"gu":"강남구","name":"수서동","d":"M1108.3,652.4L1103.2,657.3L1099.9,656.2L1082.8,658.9L1075.8,658.2L1068.2,643.7L1057.2,647.7L1052.8,656.0L1045.0,657.9L1039.3,663.0L1036.5,670.1L1039.8,674.6L1038.9,680.7L1041.2,688.2L1033.4,687.9L1009.7,692.1L1006.4,689.9L997.2,694.4L989.6,701.1L979.3,700.5L974.1,703.6L973.7,694.6L976.7,677.3L981.9,670.7L982.3,661.8L978.2,639.0L975.9,634.0L982.6,630.0L999.1,629.2L1006.4,622.9L1005.3,614.4L997.2,604.3L1007.7,600.7L1019.6,598.0L1008.4,590.9L1017.2,586.3L1035.7,579.2L1042.8,581.1L1066.8,595.1L1084.6,610.6Z","lx":1043.9,"ly":618.5,"r":31.8},{"gu":"서초구","name":"신원동","d":"M782.7,801.9L783.2,806.1L787.5,814.6L793.4,820.3L795.4,824.3L798.3,822.9L813.3,820.6L821.9,825.8L828.4,826.5L829.1,828.5L837.0,825.4L839.4,830.4L838.7,834.7L842.7,836.7L842.4,843.6L838.8,849.9L840.6,853.0L854.6,862.6L856.2,871.2L874.3,892.4L884.1,891.2L892.8,895.1L902.1,905.8L906.6,915.4L906.8,919.3L904.2,924.1L907.2,937.8L906.2,941.2L915.1,948.1L911.3,956.9L903.3,960.4L903.7,971.7L899.7,979.2L899.1,985.0L902.1,992.9L896.1,992.3L890.6,995.3L887.1,993.8L879.2,997.3L873.9,1004.6L867.3,1003.8L861.9,999.7L850.8,998.2L854.9,991.2L855.2,978.8L862.8,973.0L862.1,969.5L865.2,961.1L863.0,947.4L858.7,940.5L848.0,929.0L845.2,927.7L837.8,914.6L836.7,906.2L830.1,897.7L828.2,892.3L824.5,891.1L821.0,885.3L811.8,875.0L808.8,867.4L798.9,857.1L796.7,851.4L797.5,845.5L791.9,832.5L777.8,816.5L773.6,807.8L770.7,797.0L775.5,797.8Z","lx":877.2,"ly":919.7,"r":27.4},{"gu":"서초구","name":"양재동","d":"M751.2,643.1L768.7,694.0L798.2,730.5L787.2,740.7L788.2,741.8L758.4,769.0L770.4,782.6L779.6,790.0L783.6,800.9L782.7,801.9L775.5,797.8L764.6,794.9L753.8,795.5L746.4,804.1L739.2,816.7L738.6,824.4L734.0,831.2L736.5,841.2L728.8,847.1L726.7,853.0L728.2,857.4L724.7,860.0L721.5,855.5L716.3,852.8L728.4,836.1L726.4,828.2L717.6,818.9L717.1,804.2L712.5,803.4L711.1,797.4L716.0,778.6L708.1,773.1L698.1,769.2L691.7,770.9L686.8,755.7L696.7,738.4L702.4,731.5L693.6,719.5L676.3,710.3L665.8,706.1L662.8,702.7L655.1,700.3L649.4,696.0L654.3,687.1L655.3,682.3L661.5,677.6L663.4,672.8L669.5,671.2L674.2,673.6L684.7,669.8L694.2,674.9L705.0,670.3L714.0,662.6L714.4,659.4L710.7,650.1L712.9,648.7L751.9,641.9Z","lx":743.0,"ly":727.5,"r":40.8},{"gu":"강동구","name":"명일동","d":"M1337.1,192.3L1333.9,252.0L1346.1,255.8L1354.5,256.7L1367.0,253.9L1370.9,259.1L1355.2,281.5L1351.5,275.2L1346.0,273.9L1337.4,268.9L1333.0,273.0L1323.6,277.8L1321.5,267.5L1315.3,265.2L1313.2,259.2L1308.5,260.3L1305.9,254.7L1300.6,255.1L1298.1,258.9L1293.8,259.0L1282.1,263.2L1266.7,258.6L1269.0,250.2L1272.9,221.8L1260.6,221.7L1254.4,218.9L1262.3,207.2L1266.1,204.3L1270.2,196.2L1272.9,195.4L1275.2,191.2L1276.6,195.4L1294.0,196.6L1312.8,196.6Z","lx":1304.2,"ly":225.7,"r":29.1},{"gu":"서초구","name":"방배동","d":"M540.6,600.9L538.4,602.5L538.2,611.4L541.6,614.3L541.2,621.9L546.1,632.9L540.4,640.6L543.5,648.6L543.2,653.9L548.0,656.7L550.5,662.0L561.9,659.2L575.0,693.4L581.1,702.0L590.7,724.7L584.8,733.7L580.8,732.0L567.4,739.6L562.0,745.8L557.8,755.7L553.1,759.6L546.7,758.3L541.5,759.9L532.9,758.8L522.6,759.9L519.9,762.9L521.9,774.6L525.7,781.6L522.6,793.3L510.0,796.2L505.2,795.7L501.7,803.1L496.8,802.0L488.1,808.8L485.6,814.8L481.2,817.1L476.4,807.7L475.5,801.0L479.7,779.6L477.6,767.2L474.2,756.4L464.3,745.9L453.4,730.7L448.2,717.1L445.8,699.1L449.0,621.9L450.5,612.0L451.3,595.5L452.1,567.6L464.6,549.2L469.8,555.3L474.3,557.2L481.7,555.7L485.5,561.2L491.1,561.3L495.4,566.0L502.5,569.0L505.5,573.7L512.4,574.9L516.9,586.2L522.4,585.8L531.0,590.6L538.2,593.0Z","lx":506.4,"ly":702.2,"r":59.6},{"gu":"강남구","name":"압구정동","d":"M776.3,330.1L770.4,354.3L768.3,353.5L762.2,374.5L723.6,362.1L715.7,360.8L701.7,363.0L695.3,366.2L630.0,408.1L625.5,400.3L616.7,388.5L622.4,381.1L602.6,357.5L615.7,341.8L628.0,329.8L647.1,318.0L744.0,318.3L773.7,328.1Z","lx":652.1,"ly":354.2,"r":33.4},{"gu":"서초구","name":"원지동","d":"M850.8,998.2L844.8,1000.9L835.1,998.1L812.8,1004.7L805.0,1008.8L800.9,1003.3L791.8,996.4L780.6,993.6L779.8,985.0L776.3,981.1L775.2,976.0L768.3,973.4L764.3,965.6L756.5,957.2L750.4,952.4L748.6,948.2L743.3,945.2L728.1,945.0L720.5,940.3L718.4,927.8L724.8,922.1L730.2,912.9L734.0,900.6L733.9,896.2L729.0,892.4L730.4,886.6L728.5,882.4L731.5,873.3L724.7,860.0L728.2,857.4L726.7,853.0L728.8,847.1L736.5,841.2L734.0,831.2L738.6,824.4L739.2,816.7L746.4,804.1L753.8,795.5L764.6,794.9L770.7,797.0L773.6,807.8L777.8,816.5L791.9,832.5L797.5,845.5L796.7,851.4L798.9,857.1L808.8,867.4L811.8,875.0L821.0,885.3L824.5,891.1L828.2,892.3L830.1,897.7L836.7,906.2L837.8,914.6L845.2,927.7L848.0,929.0L858.7,940.5L863.0,947.4L865.2,961.1L862.1,969.5L862.8,973.0L855.2,978.8L854.9,991.2Z","lx":780.7,"ly":912.5,"r":48.1},{"gu":"관악구","name":"남현동","d":"M481.2,817.1L470.9,823.3L459.5,823.9L451.9,825.7L449.4,831.7L436.1,833.3L429.4,832.8L425.7,836.2L409.5,841.3L403.4,848.8L400.7,854.3L395.1,858.4L389.1,873.1L387.8,863.0L379.9,851.4L374.1,832.2L368.9,830.6L370.5,822.4L368.8,818.5L377.9,810.3L381.3,802.9L385.2,798.9L387.7,792.3L392.0,787.7L399.9,782.8L403.5,782.7L406.5,772.8L401.6,768.6L400.3,760.5L394.7,754.7L392.0,744.6L393.4,741.5L391.6,728.4L393.2,718.7L390.0,714.0L388.9,706.5L408.0,701.2L429.1,698.3L445.8,699.1L448.2,717.1L453.4,730.7L464.3,745.9L474.2,756.4L477.6,767.2L479.7,779.6L475.5,801.0L476.4,807.7Z","lx":440.0,"ly":789.8,"r":37.0},{"gu":"서초구","name":"반포동","d":"M647.8,476.9L663.9,519.5L643.5,527.3L634.0,528.7L639.9,548.3L620.0,538.4L603.0,554.9L586.4,557.8L593.7,564.8L583.8,568.8L577.8,566.4L575.6,568.3L564.3,569.6L557.1,574.2L555.8,584.3L545.5,599.8L540.6,600.9L538.2,593.0L531.0,590.6L522.4,585.8L516.9,586.2L512.4,574.9L505.5,573.7L502.5,569.0L495.4,566.0L491.1,561.3L485.5,561.2L481.7,555.7L474.3,557.2L469.8,555.3L459.0,543.7L447.5,535.1L439.9,531.0L436.3,521.4L439.2,518.8L439.2,506.2L465.4,506.2L491.6,464.1L526.0,436.7L544.9,460.9L527.7,471.7L545.0,516.1Z","lx":503.7,"ly":521.7,"r":40.5},{"gu":"서초구","name":"서초동","d":"M663.9,519.5L712.9,648.7L710.7,650.1L714.4,659.4L714.0,662.6L705.0,670.3L694.2,674.9L684.7,669.8L674.2,673.6L669.5,671.2L663.4,672.8L661.5,677.6L655.3,682.3L654.3,687.1L649.4,696.0L646.5,694.2L639.6,695.9L623.4,702.2L622.7,707.0L617.5,709.4L615.0,716.0L610.2,720.3L600.9,720.5L590.7,724.7L581.1,702.0L575.0,693.4L561.9,659.2L550.5,662.0L548.0,656.7L543.2,653.9L543.5,648.6L540.4,640.6L546.1,632.9L541.2,621.9L541.6,614.3L538.2,611.4L538.4,602.5L540.6,600.9L545.5,599.8L555.8,584.3L557.1,574.2L564.3,569.6L575.6,568.3L577.8,566.4L583.8,568.8L593.7,564.8L586.4,557.8L603.0,554.9L620.0,538.4L639.9,548.3L634.0,528.7L643.5,527.3Z","lx":618.1,"ly":625.5,"r":65.4},{"gu":"강남구","name":"대치동","d":"M940.7,564.8L939.2,563.7L938.7,564.8L920.3,572.3L917.5,581.1L915.6,584.4L906.9,585.5L894.7,600.4L886.5,606.6L880.1,609.7L850.7,616.5L841.1,619.4L826.7,628.0L822.0,607.6L788.9,519.2L878.2,484.7L890.2,482.1L895.0,530.6L931.6,534.9L946.6,541.2L948.4,550.9Z","lx":858.4,"ly":564.1,"r":49.3},{"gu":"광진구","name":"구의동","d":"M1059.2,314.0L1004.5,368.8L1011.7,351.5L1007.6,350.9L1005.7,334.3L998.3,329.7L994.6,318.1L995.2,306.9L991.7,305.2L965.1,313.7L963.1,291.0L965.6,283.6L959.1,281.6L954.3,278.1L953.9,266.1L954.8,257.7L972.7,258.5L977.1,250.7L974.6,235.9L979.9,230.2L985.7,230.9L987.9,224.6L994.9,216.5L995.2,211.8L1002.6,209.0L1023.4,186.7L1034.6,182.0L1040.8,175.8L1059.9,167.3L1070.7,178.3L1074.0,185.6L1072.1,194.6L1067.8,197.2L1064.1,203.9L1059.7,207.0L1056.2,205.1L1050.9,206.6L1042.2,214.3L1043.6,218.3L1038.2,225.0L1037.0,238.2L1041.1,243.5L1028.0,256.7L1025.8,260.4L1015.9,265.1L1013.9,267.3L1028.3,284.4Z","lx":1020.8,"ly":313.1,"r":25.9},{"gu":"성동구","name":"하왕십리동","d":"M676.5,94.6L693.5,99.6L697.1,102.9L704.3,100.5L708.6,109.2L692.6,113.7L686.5,122.7L689.0,127.4L687.3,132.9L710.1,145.6L716.2,151.4L709.9,146.1L707.9,152.1L703.5,152.8L701.6,158.7L694.4,161.7L681.8,160.3L673.2,168.3L668.3,175.8L662.7,175.3L655.9,176.4L655.3,166.7L658.2,158.4L664.3,150.5L671.4,145.8L674.3,141.0L675.7,130.3L666.2,126.2L669.4,123.3L671.2,114.6L670.9,105.1Z","lx":686.4,"ly":147.6,"r":13.0},{"gu":"송파구","name":"장지동","d":"M1293.4,683.8L1287.6,690.3L1275.1,699.6L1270.8,705.5L1257.7,712.3L1251.1,714.1L1249.5,718.9L1242.6,717.1L1230.2,711.7L1220.5,704.5L1215.4,703.8L1203.0,708.3L1202.8,724.0L1203.9,728.9L1229.2,745.5L1222.4,750.1L1211.6,753.7L1202.5,755.5L1186.7,751.2L1177.4,743.5L1176.6,758.6L1172.3,763.4L1130.6,692.2L1137.8,692.0L1137.8,687.7L1143.3,687.7L1149.8,694.1L1167.2,691.8L1172.5,681.6L1185.0,679.2L1188.2,672.2L1201.8,657.5L1206.8,646.1L1210.2,644.6L1220.2,636.4L1227.3,628.9L1233.0,615.9L1234.2,608.6L1240.6,611.4L1240.2,619.4L1244.7,620.5L1247.7,627.9L1241.5,636.6L1237.6,645.0L1242.2,650.9L1247.3,651.9L1250.3,648.4L1257.0,654.5L1261.6,656.5L1260.6,661.0L1269.0,668.0L1282.2,677.4Z","lx":1238.1,"ly":680.3,"r":29.6},{"gu":"송파구","name":"송파동","d":"M1108.0,546.0L1069.2,492.1L1090.4,471.2L1112.0,482.5L1134.0,498.3L1164.9,514.0L1169.7,517.2L1163.9,527.5L1158.1,534.1L1146.9,544.5L1121.4,562.1L1109.3,545.2Z","lx":1126.7,"ly":524.7,"r":26.8},{"gu":"서초구","name":"염곡동","d":"M796.2,742.7L797.3,743.5L799.6,750.1L797.9,757.8L799.9,757.8L810.9,752.9L815.5,753.2L821.5,748.7L824.5,750.9L827.3,750.8L840.3,746.2L852.5,747.8L855.6,754.2L857.2,765.8L855.9,783.3L854.3,788.3L852.0,790.7L844.1,795.8L839.2,801.6L840.2,805.1L838.0,811.0L838.5,819.3L836.6,825.5L829.1,828.5L828.4,826.5L821.9,825.8L813.3,820.6L798.3,822.9L795.4,824.3L793.4,820.3L787.5,814.6L783.2,806.1L782.7,801.9L783.6,800.9L783.3,799.4L779.6,790.0L770.4,782.6L758.4,769.0L788.2,741.8Z","lx":811.9,"ly":786.5,"r":31.1},{"gu":"강동구","name":"길동","d":"M1355.2,281.5L1352.6,284.6L1281.5,322.8L1280.2,321.7L1263.2,330.1L1256.8,331.4L1245.4,330.0L1222.8,321.2L1236.4,287.2L1242.7,283.7L1258.8,284.9L1266.7,258.6L1282.1,263.2L1293.8,259.0L1298.1,258.9L1300.6,255.1L1305.9,254.7L1308.5,260.3L1313.2,259.2L1315.3,265.2L1321.5,267.5L1323.6,277.8L1333.0,273.0L1337.4,268.9L1346.0,273.9L1351.5,275.2Z","lx":1285.9,"ly":289.9,"r":26.9},{"gu":"강동구","name":"성내동","d":"M1223.4,319.7L1222.8,321.2L1245.4,330.0L1221.5,410.5L1147.2,369.1L1151.5,357.6L1168.4,299.9L1163.1,297.5L1163.6,296.3Z","lx":1197.7,"ly":352.0,"r":39.5},{"gu":"성동구","name":"행당동","d":"M752.1,148.4L750.0,156.1L753.4,157.4L759.9,165.8L760.0,170.9L770.3,176.3L774.2,184.1L773.0,186.6L774.7,198.4L773.1,203.2L751.3,208.8L747.5,212.2L744.3,204.6L739.1,202.9L732.4,204.7L724.6,200.5L719.5,196.0L707.6,199.7L702.9,206.7L698.7,208.3L689.4,202.3L674.3,196.5L665.3,190.2L665.5,178.2L662.7,175.3L668.3,175.8L673.2,168.3L681.8,160.3L694.4,161.7L701.6,158.7L703.5,152.8L707.9,152.1L709.9,146.1L716.2,151.4L720.4,153.6L722.7,146.8L725.2,123.8L731.8,124.7L732.6,133.4L738.3,149.2L744.9,149.8Z","lx":734.3,"ly":175.6,"r":25.1},{"gu":"송파구","name":"문정동","d":"M1234.2,608.6L1233.0,615.9L1227.3,628.9L1220.2,636.4L1210.2,644.6L1206.8,646.1L1201.8,657.5L1188.2,672.2L1185.0,679.2L1172.5,681.6L1167.2,691.8L1149.8,694.1L1143.3,687.7L1137.8,687.7L1137.8,692.0L1130.6,692.2L1115.0,665.7L1108.3,652.4L1115.3,648.2L1096.1,615.8L1142.8,597.9L1146.9,597.7L1153.5,610.0L1157.4,619.8L1196.3,593.8L1199.7,590.5L1219.9,609.2L1242.6,584.4L1239.3,591.0L1239.3,603.2Z","lx":1150.8,"ly":653.9,"r":34.6},{"gu":"성동구","name":"옥수동","d":"M612.9,240.1L620.6,256.5L625.9,253.8L629.7,257.3L638.1,258.7L640.3,262.9L639.2,269.9L643.2,280.2L651.3,274.7L656.0,281.8L659.7,281.8L687.3,276.0L699.6,275.6L708.1,281.8L721.7,305.0L721.6,317.9L647.1,318.0L628.0,329.8L628.5,306.3L615.6,302.1L614.5,298.9L606.5,298.3L603.4,295.4L597.7,297.5L589.8,295.1L587.1,291.0L586.1,283.0L583.8,278.3L585.2,273.6L584.9,264.6L580.7,258.6L586.1,250.1L585.5,245.8L588.5,240.5L598.2,236.6L601.1,230.7L606.1,226.6L609.8,231.9L614.7,232.3Z","lx":607.4,"ly":274.1,"r":21.7},{"gu":"성동구","name":"마장동","d":"M790.4,139.8L785.3,135.8L778.9,134.5L775.3,137.2L770.6,148.8L764.3,146.5L755.9,150.6L752.1,148.4L744.9,149.8L738.3,149.2L732.6,133.4L731.8,124.7L716.2,122.5L706.8,110.8L710.0,104.9L703.1,97.8L713.4,89.5L720.8,85.5L733.5,83.8L745.1,85.1L753.2,87.6L771.4,98.7L774.6,102.7Z","lx":755.9,"ly":121.6,"r":24.3},{"gu":"성동구","name":"금호동1가","d":"M689.4,202.3L687.0,211.4L689.9,216.4L686.0,230.9L688.5,233.7L677.1,238.7L670.0,238.7L672.0,226.4L667.2,212.3L658.5,207.2L648.4,204.0L641.0,197.2L640.2,183.3L634.1,184.1L631.1,186.9L628.1,202.7L633.7,209.3L629.2,219.7L624.4,217.2L617.4,219.0L607.5,228.5L606.1,226.6L614.9,217.1L625.7,203.4L625.1,198.2L627.5,189.3L631.1,182.9L645.7,176.6L650.9,178.9L655.9,176.4L662.7,175.3L665.5,178.2L665.3,190.2L674.3,196.5Z","lx":652.9,"ly":190.9,"r":12.2},{"gu":"성동구","name":"성수동2가","d":"M789.0,210.5L827.9,231.7L843.5,237.1L858.4,239.1L883.0,237.6L825.7,366.2L820.1,364.0L788.5,339.1L795.1,318.6L795.8,312.9L803.9,301.2L799.8,288.1L797.4,285.4L799.2,277.8L803.8,268.8L791.9,264.3L804.9,221.5L802.7,219.8L783.0,215.4L778.2,206.6Z","lx":835.3,"ly":267.4,"r":31.4},{"gu":"송파구","name":"오금동","d":"M1253.7,495.9L1254.4,497.9L1260.5,505.1L1256.9,509.8L1257.9,513.0L1270.2,519.9L1273.7,520.0L1267.8,525.2L1269.8,527.6L1254.2,567.3L1249.6,576.2L1205.6,546.5L1174.5,520.4L1169.7,517.2L1191.6,472.4L1222.8,488.5L1223.1,491.0L1249.5,504.2Z","lx":1233.1,"ly":529.2,"r":29.7},{"gu":"송파구","name":"거여동","d":"M1342.8,611.4L1335.8,615.8L1330.3,623.2L1328.1,629.8L1314.9,636.7L1307.6,646.3L1309.0,651.4L1306.2,658.9L1307.2,663.8L1299.4,672.0L1293.4,683.8L1282.2,677.4L1269.0,668.0L1260.6,661.0L1261.6,656.5L1257.0,654.5L1250.3,648.4L1247.3,651.9L1242.2,650.9L1237.6,645.0L1241.5,636.6L1247.7,627.9L1244.7,620.5L1240.2,619.4L1240.6,611.4L1234.2,608.6L1239.3,603.2L1239.3,591.0L1242.6,584.4L1249.6,576.2L1254.2,567.3L1261.3,549.4L1266.1,552.2L1275.8,552.1L1279.0,555.6L1308.8,581.8L1316.1,592.8L1332.5,603.3Z","lx":1283.5,"ly":613.7,"r":38.5},{"gu":"성동구","name":"용답동","d":"M783.6,95.9L838.7,147.8L900.3,158.9L906.2,162.0L885.9,187.8L860.7,182.9L832.0,184.3L814.9,179.6L807.4,195.9L803.2,212.4L796.8,215.1L789.0,210.5L794.0,204.0L797.1,195.5L801.6,190.3L801.4,182.2L804.0,176.0L800.5,172.1L801.5,164.6L796.0,161.3L794.5,157.1L800.0,149.9L799.2,144.3L790.4,139.8L774.6,102.7L771.4,98.7L753.2,87.6L745.1,85.1L733.5,83.8L733.7,79.0L752.7,79.3Z","lx":821.5,"ly":160.2,"r":20.5},{"gu":"성동구","name":"사근동","d":"M790.4,139.8L799.2,144.3L800.0,149.9L794.5,157.1L796.0,161.3L801.5,164.6L800.5,172.1L804.0,176.0L801.4,182.2L801.6,190.3L797.1,195.5L794.0,204.0L789.0,210.5L778.2,206.6L773.1,203.2L774.7,198.4L773.0,186.6L774.2,184.1L770.3,176.3L760.0,170.9L759.9,165.8L753.4,157.4L750.0,156.1L752.1,148.4L755.9,150.6L764.3,146.5L770.6,148.8L775.3,137.2L778.9,134.5L785.3,135.8Z","lx":779.1,"ly":162.7,"r":16.2},{"gu":"성동구","name":"금호동2가","d":"M670.0,238.7L669.6,232.1L666.7,225.9L657.9,221.3L651.8,220.1L646.0,215.6L634.1,214.7L629.2,219.7L633.7,209.3L628.1,202.7L631.1,186.9L634.1,184.1L640.2,183.3L641.0,197.2L648.4,204.0L658.5,207.2L667.2,212.3L672.0,226.4Z","lx":641.2,"ly":207.7,"r":7.5},{"gu":"송파구","name":"방이동","d":"M1244.8,424.1L1245.5,423.9L1272.3,438.8L1278.7,440.1L1280.5,445.0L1276.3,447.9L1263.7,447.6L1259.8,452.0L1270.1,459.1L1270.8,466.9L1260.1,468.5L1257.6,481.4L1254.5,482.5L1252.9,493.4L1254.2,494.9L1249.5,504.2L1223.1,491.0L1222.8,488.5L1191.6,472.4L1169.7,517.2L1164.9,514.0L1134.0,498.3L1112.0,482.5L1090.4,471.2L1082.8,448.8L1113.6,435.6L1114.7,436.1L1147.2,369.1Z","lx":1167.2,"ly":433.3,"r":46.0},{"gu":"광진구","name":"광장동","d":"M1126.6,183.5L1120.7,200.6L1107.7,224.5L1107.3,246.5L1095.5,270.8L1091.1,282.1L1059.2,314.0L1028.3,284.4L1013.9,267.3L1015.9,265.1L1025.8,260.4L1028.0,256.7L1041.1,243.5L1037.0,238.2L1038.2,225.0L1043.6,218.3L1042.2,214.3L1050.9,206.6L1056.2,205.1L1059.7,207.0L1064.1,203.9L1067.8,197.2L1072.1,194.6L1074.0,185.6L1081.5,185.4L1087.2,178.0L1097.5,171.9L1101.7,173.9L1111.6,169.1L1119.6,172.7L1116.7,183.0Z","lx":1074.0,"ly":237.3,"r":33.4},{"gu":"송파구","name":"가락동","d":"M1249.6,576.2L1219.9,609.2L1199.7,590.5L1196.3,593.8L1157.4,619.8L1153.5,610.0L1146.9,597.7L1142.8,597.9L1096.1,615.8L1115.3,648.2L1108.3,652.4L1084.6,610.6L1066.8,595.1L1042.8,581.1L1035.7,579.2L1037.7,577.3L1027.8,572.1L1033.3,573.5L1036.9,565.0L1097.9,542.2L1103.7,549.1L1109.3,545.2L1121.4,562.1L1146.9,544.5L1158.1,534.1L1163.9,527.5L1169.7,517.2L1174.5,520.4L1205.6,546.5Z","lx":1174.0,"ly":566.8,"r":34.7},{"gu":"송파구","name":"풍납동","d":"M1163.1,297.5L1168.4,299.9L1151.5,357.6L1147.2,369.1L1134.8,394.6L1065.6,394.6L1064.0,393.5L1078.9,377.7L1091.0,362.8L1091.1,282.1L1095.5,270.8L1115.4,272.0L1133.1,278.6L1145.1,284.3Z","lx":1126.6,"ly":316.5,"r":35.4},{"gu":"송파구","name":"잠실동","d":"M1069.2,492.1L1058.2,500.2L1046.6,505.9L1035.1,506.2L1001.7,499.8L973.7,541.2L965.3,544.2L960.8,542.5L957.7,545.9L931.6,534.9L895.0,530.6L883.8,414.1L889.1,413.3L889.1,435.3L897.8,425.6L889.9,413.3L913.2,416.1L925.5,416.2L945.0,411.9L956.7,411.0L960.2,413.0L990.4,411.1L1002.8,412.9L1019.4,407.3L1025.5,423.8L1058.1,476.7Z","lx":948.9,"ly":472.2,"r":59.1},{"gu":"성동구","name":"금호동3가","d":"M669.7,238.6L631.2,237.7L623.3,236.0L612.9,240.1L614.7,232.3L609.8,231.9L607.5,228.5L617.4,219.0L624.4,217.2L629.2,219.7L634.1,214.7L646.0,215.6L651.8,220.1L657.9,221.3L666.7,225.9L669.6,232.1Z","lx":639.6,"ly":226.4,"r":11.3},{"gu":"송파구","name":"삼전동","d":"M1035.6,568.1L1033.3,573.5L1027.8,572.1L968.4,550.5L957.7,545.9L960.8,542.5L965.3,544.2L973.7,541.2L1001.7,499.8L1035.1,506.2L1031.4,566.3Z","lx":1007.3,"ly":537.0,"r":25.4},{"gu":"서초구","name":"잠원동","d":"M616.7,388.5L625.5,400.3L630.0,408.1L643.7,466.0L647.8,476.9L545.0,516.1L527.7,471.7L544.9,460.9L526.0,436.7L572.2,397.4L582.9,383.8L606.3,403.1Z","lx":590.3,"ly":447.6,"r":47.3},{"gu":"광진구","name":"화양동","d":"M898.2,239.6L921.4,246.1L931.9,253.1L946.6,257.1L954.8,257.7L953.9,266.1L954.3,278.1L959.1,281.6L962.1,282.6L959.3,290.6L952.2,292.3L945.9,299.4L922.6,295.2L921.9,299.1L910.9,296.7L865.5,276.9L883.0,237.6Z","lx":912.3,"ly":270.0,"r":25.0},{"gu":"성동구","name":"홍익동","d":"M707.5,109.5L706.8,110.8L716.2,122.5L725.2,123.8L724.3,132.3L692.5,127.7L692.6,136.2L687.3,132.9L689.0,127.4L686.5,122.7L692.6,113.7ZM708.2,108.2L704.3,100.5L697.1,102.9L693.5,99.6L703.1,97.8L710.0,104.9Z","lx":702.5,"ly":120.1,"r":8.9},{"gu":"성동구","name":"도선동","d":"M716.2,151.4L710.1,145.6L692.6,136.2L692.5,127.7L724.3,132.3L722.7,146.8L720.4,153.6Z","lx":714.8,"ly":139.2,"r":8.0},{"gu":"송파구","name":"석촌동","d":"M1069.2,492.1L1108.0,546.0L1103.7,549.1L1097.9,542.2L1036.9,565.0L1035.6,568.1L1031.4,566.3L1035.1,506.2L1046.6,505.9L1058.2,500.2Z","lx":1062.2,"ly":527.4,"r":26.2},{"gu":"성동구","name":"상왕십리동","d":"M680.2,95.7L676.5,94.6L670.9,105.1L671.2,114.6L669.4,123.3L666.2,126.2L675.7,130.3L659.4,129.4L658.4,86.1L664.5,91.6L672.5,90.3Z","lx":665.8,"ly":99.2,"r":7.2},{"gu":"성동구","name":"금호동4가","d":"M699.8,251.0L697.9,253.2L699.6,275.6L687.3,276.0L659.7,281.8L656.0,281.8L651.3,274.7L643.2,280.2L639.2,269.9L640.3,262.9L638.1,258.7L629.7,257.3L625.9,253.8L620.6,256.5L612.9,240.1L623.3,236.0L631.2,237.7L677.1,238.7L688.5,233.7L689.8,238.6L697.1,245.2Z","lx":665.5,"ly":259.5,"r":20.7},{"gu":"서초구","name":"내곡동","d":"M971.8,705.6L969.9,708.2L968.2,722.9L972.6,733.3L980.5,736.2L985.3,742.6L988.5,751.9L993.0,752.4L995.1,756.6L1000.1,760.2L1008.1,773.7L1008.2,790.7L1014.2,797.1L1021.5,799.2L1026.8,798.9L1026.5,803.7L1022.9,815.1L1025.7,821.5L1024.5,828.5L1015.9,831.7L1011.8,846.2L1007.5,847.3L1002.8,851.7L999.4,861.4L995.9,863.9L995.6,868.5L989.4,878.4L988.5,899.2L986.9,902.4L979.6,906.5L976.0,905.5L966.6,908.6L966.3,911.9L959.3,923.7L953.3,926.7L947.8,927.1L933.4,923.4L926.6,920.1L920.2,919.6L911.2,920.9L906.8,919.3L906.6,915.4L902.1,905.8L892.8,895.1L884.1,891.2L874.3,892.4L856.2,871.2L854.6,862.6L840.6,853.0L838.8,849.9L842.4,843.6L842.7,836.7L838.7,834.7L839.4,830.4L837.0,825.4L838.5,819.3L838.0,811.0L840.2,805.1L839.2,801.6L844.1,795.8L852.0,790.7L854.3,788.3L855.9,783.3L857.2,765.8L855.6,754.2L852.5,747.8L855.9,747.0L857.2,745.4L864.4,747.5L866.2,746.2L871.0,745.3L874.9,742.6L885.1,738.3L887.1,736.2L894.0,734.3L895.6,735.1L899.8,732.3L909.6,728.5L914.0,724.1L923.7,718.2L928.9,712.4L931.2,707.9L936.4,710.6L941.8,710.4L963.4,705.5Z","lx":930.8,"ly":814.8,"r":80.9},{"gu":"성동구","name":"성수동1가","d":"M788.5,339.1L773.7,328.1L744.0,318.3L721.6,317.9L721.7,305.0L708.1,281.8L699.6,275.6L697.9,253.2L699.8,251.0L707.9,249.3L715.3,241.0L721.3,238.0L731.2,223.5L751.3,208.8L773.1,203.2L778.2,206.6L783.0,215.4L802.7,219.8L804.9,221.5L791.9,264.3L803.8,268.8L799.2,277.8L797.4,285.4L799.8,288.1L803.9,301.2L795.8,312.9L795.1,318.6Z","lx":750.1,"ly":269.8,"r":42.2},{"gu":"광진구","name":"자양동","d":"M922.6,295.2L945.9,299.4L952.2,292.3L959.3,290.6L962.1,282.6L959.1,281.6L965.6,283.6L963.1,291.0L965.1,313.7L991.7,305.2L995.2,306.9L994.6,318.1L998.3,329.7L1005.7,334.3L1007.6,350.9L1011.7,351.5L1004.5,368.8L998.6,374.7L975.7,389.1L952.6,397.8L946.8,400.7L931.4,403.5L918.0,401.3L906.4,397.8L889.2,394.8L883.2,390.3L872.8,387.1L845.8,374.2L825.7,366.2L865.5,276.9L911.6,296.9L921.9,299.1Z","lx":929.2,"ly":350.7,"r":51.6},{"gu":"송파구","name":"신천동","d":"M1134.8,394.6L1114.7,436.1L1113.6,435.6L1082.8,448.8L1090.4,471.2L1069.2,492.1L1058.1,476.7L1025.5,423.8L1019.4,407.3L1002.8,412.9L990.4,411.1L960.2,413.0L956.7,411.0L945.0,411.9L925.5,416.2L913.2,416.1L889.9,413.3L897.8,425.6L889.1,435.3L889.1,413.3L883.8,414.1L883.2,390.3L889.2,394.8L906.4,397.8L918.0,401.3L931.4,403.5L946.8,400.7L952.6,397.8L975.7,389.1L998.6,374.7L1091.1,282.1L1091.0,362.8L1078.9,377.7L1064.0,393.5L1065.6,394.6Z","lx":1036.1,"ly":380.7,"r":30.8},{"gu":"성동구","name":"응봉동","d":"M747.5,212.2L731.2,223.5L721.3,238.0L715.3,241.0L707.9,249.3L699.8,251.0L697.1,245.2L689.8,238.6L688.5,233.7L686.0,230.9L689.9,216.4L687.0,211.4L689.4,202.3L698.7,208.3L702.9,206.7L707.6,199.7L719.5,196.0L724.6,200.5L732.4,204.7L739.1,202.9L744.3,204.6Z","lx":706.6,"ly":224.9,"r":18.3},{"gu":"송파구","name":"마천동","d":"M1342.8,611.4L1332.5,603.3L1316.1,592.8L1308.8,581.8L1279.0,555.6L1275.8,552.1L1266.1,552.2L1261.3,549.4L1269.8,527.6L1267.8,525.2L1273.7,520.0L1283.1,527.5L1292.0,527.6L1304.8,517.8L1314.5,529.1L1318.3,528.6L1337.2,536.1L1343.1,527.8L1348.9,532.9L1351.6,539.5L1357.3,541.2L1361.8,547.0L1361.5,551.7L1357.7,558.7L1357.6,563.8L1353.5,568.9L1354.7,584.7L1352.2,591.7L1347.0,599.4L1345.4,609.2Z","lx":1327.2,"ly":561.4,"r":27.2},{"gu":"성동구","name":"송정동","d":"M915.0,166.4L883.0,237.6L858.4,239.1L843.5,237.1L827.9,231.7L796.8,215.1L803.2,212.4L807.4,195.9L814.9,179.6L832.0,184.3L860.7,182.9L885.9,187.8L906.2,162.0Z","lx":858.4,"ly":210.9,"r":27.9}],"gus":[{"gu":"동작구","d":"M308.2,445.2L341.3,461.7L360.6,478.7L370.9,485.0L386.8,490.4L412.9,503.1L427.8,506.1L439.2,506.2L439.2,518.8L436.3,521.4L439.9,531.0L447.5,535.1L464.6,549.2L452.1,567.6L451.6,591.1L448.3,633.5L445.8,699.1L429.1,698.3L408.0,701.2L388.9,706.5L387.6,699.4L380.2,698.6L374.9,690.7L367.5,683.7L357.7,678.0L355.3,670.2L345.7,661.1L340.7,653.9L345.3,643.5L345.1,621.5L339.2,607.2L342.3,602.9L342.2,594.1L336.7,588.5L329.8,589.4L322.4,599.8L303.2,608.5L292.9,598.5L282.0,594.9L275.7,588.8L268.8,586.3L256.0,592.7L252.8,596.8L246.6,598.7L233.0,593.9L229.4,598.3L215.7,599.7L209.7,594.7L201.8,592.3L194.7,593.7L189.1,591.8L171.5,579.9L170.4,580.2L162.4,592.1L152.5,612.7L142.1,611.4L124.7,611.6L114.3,615.4L103.3,622.1L91.9,633.4L60.4,644.9L45.7,644.6L93.2,571.7L102.9,570.3L128.3,563.7L132.6,557.8L132.8,548.0L158.8,467.8L165.9,465.9L166.9,458.2L165.3,455.7L166.3,448.4L177.2,449.2L194.4,448.1L203.4,446.0L229.6,444.9L282.0,435.0Z"},{"gu":"강남구","d":"M742.0,318.0L773.7,328.1L820.1,364.0L845.8,374.2L872.8,387.1L883.2,390.3L883.8,414.1L894.9,529.5L905.9,532.0L931.6,534.9L968.4,550.5L1020.6,568.9L1035.6,575.9L1038.8,580.0L1042.8,581.1L1066.8,595.2L1084.6,610.6L1125.6,683.8L1172.3,763.4L1160.3,772.3L1158.2,777.2L1137.9,791.2L1135.5,795.8L1135.0,814.0L1129.9,814.4L1116.5,805.0L1115.0,798.0L1109.1,794.7L1081.8,789.7L1071.0,791.3L1073.2,797.9L1069.0,805.0L1055.9,811.9L1055.4,816.6L1047.5,822.3L1044.3,829.6L1024.5,828.5L1025.7,821.5L1022.9,815.1L1026.8,798.9L1014.2,797.1L1008.2,790.7L1008.1,773.7L1000.1,760.2L988.5,751.9L985.3,742.6L980.5,736.2L972.6,733.3L968.2,722.9L969.9,705.0L941.8,710.4L931.2,707.9L928.8,712.5L923.3,718.6L915.6,722.2L909.6,728.5L898.1,734.3L888.7,734.6L871.0,745.3L821.5,748.7L797.8,758.4L799.3,745.2L787.2,740.7L798.2,730.5L768.7,694.0L762.9,673.2L751.2,643.1L734.2,645.0L712.9,648.7L643.7,466.0L630.0,408.1L616.8,388.6L606.3,403.1L582.9,383.8L601.8,358.4L615.7,341.8L628.0,329.8L647.0,318.0Z"},{"gu":"강동구","d":"M1278.7,440.1L1272.3,438.8L1146.2,368.5L1151.5,357.6L1168.4,299.9L1160.3,295.8L1145.1,284.3L1115.4,272.0L1095.5,270.8L1107.3,246.5L1107.7,224.5L1121.6,198.7L1128.6,177.4L1137.3,166.1L1151.3,154.9L1165.9,140.2L1194.7,123.0L1223.6,111.5L1240.9,108.5L1298.4,108.4L1329.2,85.2L1338.9,79.4L1367.8,55.1L1389.1,40.7L1407.0,40.4L1415.1,38.9L1432.2,31.1L1443.1,24.0L1441.4,37.3L1433.7,43.9L1432.9,51.9L1434.7,66.9L1445.8,86.4L1452.7,105.3L1454.6,127.3L1462.7,143.3L1466.8,156.3L1464.6,178.3L1465.2,188.3L1463.5,207.8L1471.6,215.5L1472.6,219.8L1470.3,240.3L1471.1,250.1L1453.3,249.0L1434.8,257.7L1425.6,255.3L1416.5,255.6L1404.5,260.3L1390.3,257.7L1388.6,263.8L1370.9,259.1L1356.3,280.7L1342.8,295.9L1339.2,304.2L1330.6,315.5L1321.9,331.9L1323.8,343.1L1317.5,364.9L1305.8,378.8L1292.5,405.9L1281.7,407.3L1277.2,422.1Z"},{"gu":"광진구","d":"M1126.6,183.5L1120.7,200.6L1107.7,224.5L1107.3,246.5L1095.5,270.8L1091.1,282.1L998.6,374.7L975.7,389.1L946.8,400.7L931.4,403.5L889.2,394.8L883.2,390.3L872.8,387.1L845.8,374.2L825.7,366.2L915.0,166.4L908.1,162.9L918.2,131.0L931.0,111.7L937.9,86.2L963.9,89.6L976.2,92.4L1000.0,100.3L1022.4,93.5L1046.2,80.7L1053.4,74.2L1057.4,82.9L1064.8,83.7L1070.5,89.4L1066.5,98.0L1061.1,126.4L1060.3,134.9L1055.0,152.5L1058.4,165.9L1070.7,178.3L1074.0,185.6L1081.5,185.4L1087.2,178.0L1097.5,171.9L1101.7,173.9L1111.6,169.1L1119.6,172.7L1116.7,183.0Z"},{"gu":"관악구","d":"M174.5,581.5L189.1,591.8L194.7,593.7L201.8,592.3L209.7,594.7L215.7,599.7L229.4,598.3L233.0,593.9L246.6,598.7L252.8,596.8L256.0,592.7L268.8,586.3L275.7,588.8L282.0,594.9L292.9,598.5L303.2,608.5L322.4,599.8L329.8,589.4L336.7,588.5L342.2,594.1L342.3,602.9L339.2,607.2L345.1,621.5L345.3,643.5L340.7,653.9L345.7,661.1L355.3,670.2L357.7,678.0L367.5,683.7L374.9,690.7L380.2,698.6L387.6,699.4L388.9,706.5L408.0,701.2L429.1,698.3L445.8,699.1L448.2,717.1L452.4,728.1L457.7,737.6L472.5,754.1L476.6,764.1L479.7,779.6L475.5,801.0L476.2,807.1L481.2,817.1L470.9,823.3L451.9,825.7L449.4,831.7L429.4,832.8L425.7,836.2L409.5,841.3L400.7,854.3L395.1,858.4L389.1,873.1L374.3,880.0L357.1,893.6L355.3,900.4L357.7,906.2L358.8,920.8L350.2,932.1L335.5,931.3L329.9,939.8L310.3,942.3L296.5,939.1L291.7,943.0L280.6,945.1L275.9,942.1L267.9,945.6L259.2,952.6L240.5,950.5L234.4,961.4L226.0,956.9L221.8,950.7L219.2,938.9L222.4,932.6L216.2,922.7L191.2,901.9L185.1,898.7L183.1,892.9L183.2,880.0L174.1,868.2L174.4,864.4L168.7,863.2L163.3,853.3L155.7,851.4L148.4,842.6L142.8,827.3L135.8,825.7L129.7,826.2L112.3,822.4L100.9,818.9L102.7,795.2L96.3,784.1L99.1,770.7L92.5,767.6L85.6,753.4L80.2,748.8L78.3,736.6L71.2,723.8L73.0,722.0L84.2,717.9L87.0,710.5L89.6,690.9L77.7,689.5L73.7,680.8L79.2,671.9L24.2,682.3L27.9,672.3L45.7,644.6L60.4,644.9L91.9,633.4L103.3,622.1L114.3,615.4L124.7,611.6L142.1,611.4L152.5,612.7L162.4,592.1L170.4,580.2Z"},{"gu":"서초구","d":"M712.9,648.7L734.2,645.0L751.2,643.1L762.9,673.2L768.7,694.0L798.2,730.5L787.2,740.7L799.3,745.2L798.1,758.6L821.5,748.7L871.0,745.3L888.7,734.6L898.1,734.3L909.6,728.5L915.6,722.2L923.3,718.6L928.8,712.5L931.2,707.9L941.8,710.4L969.9,705.0L968.2,722.9L972.6,733.3L980.5,736.2L985.3,742.6L988.5,751.9L1000.1,760.2L1008.1,773.7L1008.2,790.7L1014.2,797.1L1026.8,798.9L1022.9,815.1L1025.7,821.5L1024.5,828.5L1015.9,831.7L1011.8,846.2L1002.8,851.7L999.4,861.4L989.4,878.4L988.5,899.2L979.6,906.5L966.6,908.6L959.3,923.7L947.8,927.1L926.6,920.1L911.2,920.9L904.2,924.1L906.2,941.2L915.1,948.1L911.3,956.9L903.3,960.4L903.7,971.7L899.1,985.0L902.1,992.9L887.1,993.8L879.2,997.3L873.9,1004.6L861.9,999.7L850.8,998.2L844.8,1000.9L835.1,998.1L812.8,1004.7L805.0,1008.8L791.8,996.4L780.6,993.6L779.8,985.0L775.2,976.0L768.3,973.4L764.3,965.6L743.3,945.2L728.1,945.0L720.5,940.3L718.4,927.8L724.8,922.1L730.2,912.9L734.0,900.6L729.0,892.4L728.5,882.4L731.9,876.5L727.3,864.4L721.5,855.5L716.3,852.8L728.4,836.1L726.4,828.2L717.6,818.9L717.1,804.2L711.1,797.4L716.0,778.6L708.1,773.1L698.1,769.2L689.6,770.8L690.5,780.2L688.6,788.0L682.1,797.3L683.7,806.0L674.6,807.6L673.9,816.0L668.0,821.4L655.3,823.0L648.7,829.6L639.5,832.4L628.6,830.2L622.1,836.0L613.1,838.4L593.4,830.8L582.6,817.9L581.0,811.1L575.0,804.0L568.5,789.0L561.9,779.2L564.1,767.8L557.8,755.7L553.1,759.6L532.9,758.8L522.6,759.9L519.9,762.9L521.9,774.6L525.7,781.6L522.6,793.3L505.2,795.7L501.7,803.1L496.8,802.0L488.1,808.8L481.2,817.1L476.2,807.1L475.5,801.0L479.7,779.6L476.6,764.1L472.5,754.1L457.7,737.6L452.4,728.1L448.2,717.1L445.8,699.1L448.3,633.5L451.6,591.1L452.1,567.6L464.6,549.2L447.5,535.1L439.9,531.0L436.3,521.4L439.2,518.8L439.2,506.2L465.4,506.2L491.6,464.1L533.7,430.5L572.2,397.4L582.9,383.8L606.3,403.1L616.8,388.6L630.0,408.1L643.7,466.0Z"},{"gu":"송파구","d":"M1278.7,440.1L1276.3,447.9L1263.7,447.6L1259.8,452.0L1270.1,459.1L1270.8,466.9L1260.1,468.5L1257.6,481.4L1252.6,492.7L1260.5,505.1L1257.9,513.0L1273.7,520.0L1283.1,527.5L1292.0,527.6L1304.8,517.8L1314.5,529.1L1318.3,528.6L1337.2,536.1L1343.1,527.8L1348.9,532.9L1351.6,539.5L1361.8,547.0L1353.5,568.9L1354.7,584.7L1347.0,599.4L1345.4,609.2L1335.8,615.8L1328.1,629.8L1314.9,636.7L1307.6,646.3L1309.0,651.4L1307.2,663.8L1299.4,672.0L1292.6,685.4L1275.1,699.6L1270.8,705.5L1251.1,714.1L1249.5,718.9L1230.2,711.7L1220.5,704.5L1215.4,703.8L1203.0,708.3L1203.9,728.9L1229.2,745.5L1222.4,750.1L1202.5,755.5L1186.7,751.2L1177.4,743.5L1176.6,758.6L1172.3,763.4L1125.6,683.8L1084.6,610.6L1066.8,595.2L1042.8,581.1L1038.8,580.0L1035.6,575.9L1020.6,568.9L968.4,550.5L931.6,534.9L905.9,532.0L894.9,529.5L883.8,414.1L883.2,390.3L889.2,394.8L931.4,403.5L946.8,400.7L975.7,389.1L998.6,374.7L1091.1,282.1L1095.5,270.8L1115.4,272.0L1145.1,284.3L1160.3,295.8L1168.4,299.9L1151.5,357.6L1146.2,368.5L1272.3,438.8Z"},{"gu":"성동구","d":"M900.3,158.9L915.0,166.4L825.7,366.2L820.1,364.0L773.7,328.1L742.0,318.0L647.0,318.0L628.0,329.8L628.5,306.3L609.8,297.2L597.7,297.5L589.8,295.1L583.8,278.3L584.9,264.6L580.7,258.6L586.1,250.1L588.5,240.5L598.2,236.6L601.1,230.7L621.9,208.9L631.4,182.7L639.4,180.2L638.9,178.7L650.2,178.6L655.9,176.4L655.3,166.7L658.2,158.4L674.3,141.0L675.7,130.3L659.4,129.4L658.4,86.1L664.5,91.6L672.5,90.3L680.2,95.7L698.5,99.7L707.6,95.1L713.4,89.4L720.8,85.5L733.5,83.8L733.7,79.0L752.8,79.3L783.6,95.9L838.7,147.8Z"}],"ctx":[{"n":"도봉구","d":"M803.2,-646.0L803.9,-627.6L800.3,-621.5L798.7,-609.2L792.6,-587.5L788.2,-577.7L784.8,-547.4L788.5,-528.8L801.2,-505.6L801.4,-482.8L811.4,-464.0L814.7,-444.7L813.1,-429.0L814.1,-419.5L821.7,-404.5L823.7,-396.9L822.8,-381.1L820.3,-373.7L820.1,-360.1L818.1,-352.4L809.1,-362.3L800.9,-382.5L792.6,-374.1L789.1,-365.3L777.3,-359.4L777.5,-349.7L773.6,-338.1L768.7,-330.3L768.5,-325.0L763.0,-309.6L751.5,-296.7L756.3,-290.2L741.8,-301.4L733.6,-314.6L731.6,-326.4L715.3,-337.3L706.5,-360.6L702.0,-365.5L678.8,-383.9L671.1,-388.3L664.9,-398.7L654.7,-402.0L646.8,-409.4L629.3,-406.7L616.1,-411.2L611.6,-416.3L604.9,-420.6L602.6,-429.8L613.9,-489.6L620.1,-488.6L624.0,-494.3L617.3,-506.3L619.6,-525.3L632.9,-537.2L633.4,-545.3L621.8,-569.6L616.2,-571.0L610.0,-578.0L606.8,-595.0L601.0,-602.8L587.1,-605.7L582.1,-629.1L583.3,-636.8L581.4,-673.0L578.0,-682.5L588.7,-693.7L588.4,-715.0L601.0,-719.4L609.9,-728.5L617.7,-745.5L640.2,-742.8L652.1,-734.6L658.4,-736.9L668.2,-733.8L680.3,-742.5L688.4,-732.1L690.7,-712.8L697.3,-692.4L703.1,-690.8L704.4,-684.6L726.5,-689.8L735.4,-694.0L737.7,-698.4L748.7,-706.9L758.7,-706.5L762.1,-695.4L771.8,-688.2L782.9,-694.0L787.0,-699.0L790.8,-683.7L793.8,-678.5L793.1,-659.9L798.7,-648.2Z","lx":null,"ly":null},{"n":"은평구","d":"M327.2,-283.8L316.8,-275.8L310.8,-275.4L292.3,-265.1L286.4,-264.2L279.2,-250.8L278.6,-243.9L283.8,-228.9L283.4,-215.1L288.2,-183.5L283.3,-169.4L286.1,-162.7L277.7,-152.4L264.9,-141.9L252.4,-134.3L252.0,-126.8L244.1,-126.2L239.6,-114.6L233.1,-114.2L232.4,-106.5L240.3,-98.8L237.8,-86.2L226.3,-78.4L220.8,-80.7L205.3,-72.8L196.6,-70.7L183.6,-59.4L170.9,-40.3L170.1,-26.3L172.1,-19.8L163.5,-12.8L151.0,-11.5L149.9,-5.4L140.7,4.0L140.3,11.9L135.7,15.2L125.7,12.3L111.0,14.2L109.4,-4.3L94.9,-12.3L85.2,2.5L38.7,56.3L40.0,59.8L-28.1,3.6L-42.5,-11.1L-62.1,-35.3L-54.3,-42.1L-47.1,-53.6L-36.0,-53.8L-44.0,-39.8L-43.2,-27.4L-36.1,-20.7L-25.4,-22.6L-10.2,-20.7L-4.6,-24.2L13.4,-21.0L19.6,-27.2L27.6,-29.0L27.2,-41.0L24.1,-47.4L31.2,-57.2L38.7,-63.2L34.5,-77.3L36.1,-90.4L29.3,-107.5L30.2,-114.5L40.1,-118.5L30.9,-166.4L38.2,-184.9L38.7,-195.7L45.3,-205.7L46.5,-215.5L56.0,-217.0L58.0,-227.5L65.7,-235.5L65.8,-244.3L63.2,-251.9L73.3,-263.3L74.1,-282.9L66.6,-292.8L63.8,-304.8L65.6,-309.1L84.7,-321.4L86.5,-325.2L80.8,-342.0L92.0,-379.3L81.1,-384.2L68.7,-392.0L72.3,-398.2L79.0,-395.7L92.2,-384.8L99.3,-382.1L152.4,-390.8L180.8,-416.1L193.6,-418.3L211.4,-423.5L218.8,-430.7L225.4,-446.5L233.9,-458.4L244.0,-465.4L255.7,-468.3L271.8,-475.0L273.5,-461.6L280.2,-459.3L283.2,-453.8L291.3,-447.6L306.4,-445.3L320.5,-434.0L324.0,-414.6L324.2,-403.2L330.3,-395.1L329.7,-382.1L331.5,-365.2L335.1,-360.9L343.4,-333.0L348.2,-324.6L352.2,-308.1L343.5,-299.4L334.3,-285.7Z","lx":null,"ly":null},{"n":"동대문구","d":"M901.4,-143.5L903.7,-124.3L908.2,-112.9L910.2,-99.8L908.6,-96.0L895.1,-79.9L893.1,-63.1L899.6,-42.3L897.5,-27.2L901.5,-23.1L909.4,-7.8L907.0,2.2L927.5,32.2L932.8,79.6L937.9,86.2L931.0,111.7L918.2,131.0L908.1,162.9L900.3,158.9L838.7,147.8L783.6,95.9L752.8,79.3L733.7,79.0L733.5,83.8L720.8,85.5L713.4,89.4L707.6,95.1L698.5,99.7L680.2,95.7L672.5,90.3L664.5,91.6L658.2,86.1L657.7,44.5L689.7,16.9L700.4,-0.3L703.8,-2.3L703.0,-3.2L722.9,-28.2L724.3,-31.1L723.8,-37.8L736.3,-38.1L743.9,-59.6L752.4,-71.7L767.4,-71.1L771.2,-72.7L777.5,-69.0L780.3,-69.7L789.2,-82.5L792.7,-92.9L800.1,-101.9L804.6,-95.4L830.8,-104.1L840.7,-101.2L845.3,-110.9L845.5,-114.1L848.9,-116.8L856.1,-127.4L870.4,-132.0L873.1,-129.7L895.2,-141.2L897.8,-139.7L898.9,-142.5Z","lx":864.7,"ly":78.5},{"n":"금천구","d":"M-67.3,640.3L-43.4,659.5L-31.0,675.7L-23.5,680.1L-14.4,682.4L6.2,686.4L79.2,671.9L73.7,680.8L77.7,689.5L89.6,690.9L87.0,710.5L84.2,717.9L73.0,722.0L71.2,723.8L78.3,736.6L80.2,748.8L85.6,753.4L92.5,767.6L99.1,770.7L96.3,784.1L102.7,795.2L100.9,818.9L129.7,826.2L135.8,825.7L142.5,827.0L148.4,842.6L155.7,851.4L163.3,853.3L168.7,863.2L174.4,864.4L173.5,873.8L164.6,879.9L156.7,890.3L147.9,896.8L145.4,907.9L137.3,917.5L132.7,930.9L127.6,934.8L111.6,933.5L92.1,943.0L86.5,951.8L87.1,958.5L77.2,973.3L66.3,975.5L60.5,972.5L44.6,972.0L43.4,960.5L33.7,953.3L23.0,938.5L28.9,936.7L15.5,898.9L7.9,897.7L2.1,890.8L2.6,884.4L8.5,879.8L-1.3,852.1L-7.5,856.5L-24.2,852.2L-25.4,840.8L-39.9,829.9L-42.6,821.3L-40.6,811.0L-45.3,806.2L-41.6,799.8L-27.3,799.2L-36.3,786.7L-46.4,789.5L-50.6,787.8L-58.6,777.1L-49.1,766.7L-57.2,759.9L-64.3,751.0L-64.5,744.8L-82.7,716.4L-93.0,695.4L-114.6,642.9L-107.5,637.2L-100.3,642.3L-84.7,637.7L-80.4,634.0Z","lx":76.5,"ly":878.6},{"n":"구로구","d":"M-75.2,434.0L-58.8,446.9L-49.1,460.1L-32.6,464.6L-30.0,468.9L-23.1,469.6L-22.7,472.9L-18.2,479.7L-14.1,481.5L-10.8,488.2L-1.4,515.7L-1.6,517.2L-5.5,518.7L-7.6,527.4L-5.6,531.0L-7.0,544.6L-3.6,550.1L-1.0,559.9L1.9,579.7L10.4,617.9L19.9,632.2L38.1,643.2L42.4,649.7L27.9,672.3L24.2,682.3L6.2,686.4L-24.8,679.5L-33.3,673.7L-41.0,662.0L-59.1,646.0L-65.7,641.1L-80.4,634.0L-84.7,637.7L-100.3,642.3L-93.1,632.4L-88.9,621.7L-93.9,618.8L-107.9,623.7L-111.1,615.5L-122.4,615.1L-126.9,602.0L-125.0,586.2L-132.0,579.7L-137.0,592.8L-142.4,595.6L-147.0,602.8L-161.4,607.6L-167.5,612.7L-184.9,637.7L-197.5,642.0L-205.4,657.7L-211.8,665.1L-223.4,666.7L-233.3,663.4L-243.8,667.2L-246.2,674.7L-249.2,716.5L-262.3,709.1L-271.2,711.2L-285.2,706.4L-302.8,712.6L-302.6,704.1L-309.7,695.1L-318.6,691.9L-338.3,702.6L-356.3,700.9L-367.7,704.1L-372.6,700.6L-383.1,701.6L-387.0,707.0L-385.4,714.8L-393.4,719.9L-396.0,715.4L-405.8,711.2L-402.4,700.2L-392.7,688.8L-387.3,688.6L-383.6,682.2L-378.5,666.2L-380.6,661.1L-381.9,641.4L-371.9,637.1L-360.6,627.1L-364.4,612.6L-389.2,602.6L-406.1,592.0L-407.2,584.1L-414.1,571.4L-408.3,560.3L-398.3,563.4L-387.6,555.6L-380.3,553.3L-381.4,543.2L-370.5,534.4L-369.1,519.1L-365.4,511.7L-367.1,498.8L-347.2,492.2L-342.4,493.6L-339.4,492.5L-332.6,493.5L-322.2,496.8L-324.1,507.9L-319.3,515.4L-317.2,518.2L-309.1,523.3L-307.1,526.5L-300.7,529.8L-289.3,527.2L-284.6,520.2L-280.0,519.7L-272.7,509.4L-264.6,512.7L-258.2,510.8L-250.7,499.9L-245.6,496.3L-244.4,492.3L-240.6,488.0L-237.8,488.1L-232.1,491.2L-228.0,486.3L-214.5,480.9L-204.9,482.6L-196.9,489.4L-183.1,484.5L-172.3,504.9L-166.0,502.6L-153.7,494.7L-160.3,503.5L-160.2,508.8L-156.1,515.8L-151.0,516.0L-150.2,514.0L-146.8,512.4L-130.3,517.0L-120.3,511.3L-114.3,521.3L-105.3,525.4L-104.7,517.7L-99.7,506.3L-100.7,500.8L-97.9,498.6L-99.3,494.9L-103.7,492.5L-103.7,488.8L-102.7,487.7L-99.1,488.3L-95.4,486.8L-97.1,480.7L-96.2,478.0L-91.0,479.4L-89.2,477.5L-97.1,472.2L-99.0,473.5L-98.6,477.3L-100.3,479.5L-102.8,478.7L-103.5,476.4L-97.2,468.4L-92.0,467.8L-89.7,460.3L-84.5,462.4L-83.3,461.8L-84.6,455.5L-83.9,450.4L-81.5,443.9L-77.7,439.6L-80.1,436.5L-79.3,435.2L-74.8,435.2Z","lx":null,"ly":null},{"n":"종로구","d":"M411.5,-280.8L429.2,-282.7L436.8,-278.0L438.1,-273.9L435.2,-263.9L446.5,-250.8L455.8,-230.3L453.3,-218.2L460.3,-197.3L470.7,-184.3L468.5,-179.4L466.0,-167.6L467.1,-155.3L472.0,-151.4L468.3,-141.9L471.6,-133.6L471.2,-120.3L466.5,-116.6L457.5,-115.1L450.3,-108.9L439.6,-103.9L429.5,-100.9L425.4,-95.9L424.0,-88.7L420.5,-81.0L421.4,-79.8L426.8,-79.6L432.7,-71.3L441.8,-67.7L444.8,-64.5L456.8,-58.7L464.9,-58.8L466.6,-57.5L471.3,-47.8L480.6,-42.6L484.1,-38.3L513.4,-42.4L515.5,-44.8L520.9,-43.7L531.2,-46.0L538.7,-44.4L544.0,-45.0L548.0,-38.9L546.6,-31.1L551.1,-24.0L556.4,-21.0L557.1,-18.2L559.5,-17.0L559.0,-15.7L560.8,-12.0L569.0,-10.7L575.2,7.8L573.6,19.0L583.2,31.1L593.1,32.5L599.2,24.0L604.6,25.4L614.7,19.1L618.7,22.6L622.5,21.6L624.2,23.1L625.4,28.7L632.3,40.3L629.3,46.1L631.4,49.7L636.6,48.7L638.5,47.5L637.9,46.4L648.2,41.5L650.4,41.4L655.1,44.8L655.8,48.1L657.1,46.8L658.2,86.1L645.0,87.3L628.9,97.0L614.1,100.2L590.3,99.9L545.8,101.8L524.0,106.5L488.9,110.4L471.0,109.7L450.9,104.7L440.0,104.8L418.7,101.7L402.5,102.8L399.2,108.2L391.5,106.2L381.6,109.6L369.4,125.2L326.7,72.0L312.0,56.3L302.4,42.2L313.2,36.2L321.0,35.3L325.8,26.6L322.7,19.3L325.0,5.6L322.3,-4.6L321.6,-21.8L324.1,-39.5L322.6,-52.8L330.4,-62.5L325.3,-82.6L309.2,-90.0L299.6,-87.6L301.4,-95.5L296.4,-110.4L305.0,-127.0L298.1,-132.4L291.6,-146.0L287.3,-148.2L286.1,-162.7L283.3,-169.4L288.2,-183.5L283.4,-215.1L283.8,-228.9L278.6,-243.9L279.2,-250.8L286.4,-264.2L292.3,-265.1L310.8,-275.4L316.8,-275.8L327.2,-283.8L342.6,-287.0L354.4,-285.9L361.9,-292.2L377.2,-291.9L393.0,-297.6L401.7,-302.5L413.6,-298.2L412.2,-295.2Z","lx":486.6,"ly":60.0},{"n":"강북구","d":"M583.3,-636.8L582.1,-629.1L587.1,-605.7L601.0,-602.8L606.8,-595.0L610.0,-578.0L616.2,-571.0L621.8,-569.6L633.4,-545.3L632.9,-537.2L619.6,-525.3L617.3,-506.3L624.0,-494.3L620.1,-488.6L613.9,-489.6L602.6,-429.8L604.9,-420.6L611.6,-416.3L616.1,-411.2L629.3,-406.7L646.8,-409.4L654.7,-402.0L664.9,-398.7L671.1,-388.3L678.8,-383.9L702.0,-365.5L706.5,-360.6L715.3,-337.3L731.6,-326.4L733.6,-314.6L741.8,-301.4L756.3,-290.2L765.6,-279.7L779.0,-271.3L792.7,-250.4L776.5,-238.1L763.5,-214.8L743.1,-195.8L741.2,-191.8L732.4,-182.9L730.4,-177.7L726.5,-174.3L722.7,-174.2L693.4,-152.1L693.0,-173.9L675.9,-175.9L652.0,-167.6L651.1,-173.3L643.1,-175.4L629.7,-187.2L623.4,-190.5L612.8,-188.8L607.4,-194.3L594.9,-199.2L590.7,-203.0L590.4,-208.0L579.6,-219.2L575.9,-228.3L577.8,-232.6L579.2,-248.8L567.5,-247.7L559.0,-250.2L557.1,-254.7L548.1,-259.3L535.4,-262.8L521.3,-281.4L507.0,-296.7L495.1,-304.0L487.8,-305.2L485.1,-313.2L467.3,-324.5L458.6,-328.0L463.1,-334.3L466.1,-351.8L464.0,-360.2L458.9,-362.1L453.7,-375.2L463.2,-388.3L460.6,-400.5L457.5,-404.1L457.3,-413.3L449.9,-419.3L445.7,-430.7L442.5,-433.2L436.9,-446.7L435.4,-454.6L452.5,-460.8L467.9,-473.3L474.3,-483.9L476.9,-503.2L479.3,-508.3L488.1,-509.0L499.5,-513.7L509.2,-525.2L506.3,-530.2L510.4,-541.5L507.5,-545.6L508.9,-562.1L506.2,-570.7L508.5,-575.9L504.5,-581.1L504.7,-593.6L499.4,-606.2L508.9,-610.7L512.3,-616.6L522.5,-624.0L525.4,-630.3L547.7,-636.0L557.4,-635.4L562.2,-640.8L570.0,-640.6Z","lx":null,"ly":null},{"n":"중랑구","d":"M1053.4,74.2L1046.2,80.7L1022.4,93.5L1000.0,100.3L963.9,89.6L937.9,86.2L932.8,79.6L928.3,35.0L927.5,32.2L907.0,2.2L909.4,-7.8L901.5,-23.1L897.5,-27.2L899.6,-42.3L893.1,-63.1L895.1,-79.9L908.6,-96.0L910.2,-99.8L908.2,-112.9L903.7,-124.3L901.5,-141.5L904.8,-181.2L896.8,-193.4L903.0,-199.8L924.2,-204.8L954.1,-217.8L981.0,-224.7L988.0,-222.4L992.1,-223.9L1014.4,-210.3L1016.5,-210.6L1020.6,-216.5L1029.5,-216.7L1031.8,-220.1L1043.4,-225.2L1053.0,-219.7L1057.5,-223.2L1095.4,-226.3L1102.5,-229.8L1110.8,-225.0L1125.4,-220.0L1136.3,-209.4L1133.9,-197.4L1138.0,-170.1L1134.3,-159.6L1134.0,-151.3L1143.1,-143.4L1140.9,-136.8L1140.9,-124.0L1129.0,-108.0L1120.6,-91.4L1134.9,-65.5L1133.8,-56.0L1116.9,-51.1L1103.3,-24.8L1099.8,-4.6L1094.6,12.4L1066.4,30.3L1064.3,41.1L1054.7,59.3Z","lx":1000.6,"ly":54.1},{"n":"강서구","d":"M-207.0,86.9L-194.6,101.9L-142.5,143.0L-128.9,149.7L-70.2,186.6L-76.5,196.4L-76.6,206.7L-83.0,206.5L-82.5,216.0L-68.6,239.2L-83.0,245.6L-106.8,246.3L-122.2,240.1L-145.2,222.7L-153.1,219.5L-163.7,262.3L-155.2,288.1L-157.0,316.8L-154.3,356.8L-231.3,369.0L-274.0,378.0L-305.0,313.9L-301.2,307.0L-308.4,292.2L-311.6,279.3L-327.5,280.5L-326.3,274.2L-328.9,267.2L-325.1,254.0L-328.7,241.5L-337.8,242.6L-347.8,259.8L-347.5,272.2L-351.0,280.4L-367.6,286.8L-395.9,287.6L-417.5,286.4L-426.4,281.5L-443.5,267.9L-471.0,273.7L-478.0,279.8L-478.4,286.0L-486.2,289.3L-486.8,295.0L-483.0,305.5L-491.5,310.1L-500.6,312.0L-506.9,317.1L-511.2,308.1L-511.6,294.0L-506.2,282.3L-522.1,278.9L-523.3,271.5L-527.5,266.5L-537.9,260.2L-545.3,252.1L-565.5,252.4L-588.8,248.0L-594.8,248.0L-599.0,238.4L-606.4,233.4L-620.2,234.8L-624.8,237.7L-633.8,225.7L-634.5,219.9L-646.3,214.3L-646.5,199.7L-661.0,191.8L-647.6,184.1L-634.0,180.4L-621.2,182.0L-617.1,178.5L-624.0,171.6L-617.0,167.2L-602.2,150.6L-592.9,161.6L-597.1,138.7L-607.1,124.8L-609.0,113.0L-601.0,117.0L-593.5,117.6L-581.1,114.8L-579.9,109.3L-574.1,105.4L-575.6,97.2L-568.9,94.8L-572.7,86.7L-570.1,75.1L-555.6,67.1L-543.5,62.5L-534.7,48.7L-528.5,48.4L-527.7,30.1L-519.8,33.8L-517.4,54.4L-514.9,54.0L-516.8,32.7L-511.5,19.6L-510.5,6.8L-503.1,1.0L-502.4,12.5L-495.2,6.6L-497.3,2.6L-486.7,-17.8L-476.6,-16.3L-477.7,-32.2L-486.5,-38.7L-487.3,-53.7L-493.4,-63.9L-495.4,-79.8L-492.9,-81.1L-491.3,-93.8L-480.8,-103.7L-480.7,-110.8L-467.3,-126.8L-450.5,-111.0L-438.4,-102.2L-422.5,-87.8L-409.3,-79.2L-396.0,-66.7L-391.0,-64.4L-382.0,-48.5L-338.6,-14.0L-318.5,-3.5L-291.0,17.6L-286.2,22.6L-260.0,41.3L-233.7,65.2Z","lx":null,"ly":null},{"n":"중구","d":"M658.2,86.1L659.4,129.4L675.7,130.3L674.3,141.0L658.2,158.4L655.3,166.7L655.9,176.4L650.2,178.6L638.9,178.7L639.4,180.2L631.4,182.7L621.9,208.9L601.1,230.7L598.2,236.6L588.5,240.5L586.1,250.1L580.7,258.6L584.9,264.6L576.2,266.4L564.7,251.5L570.4,238.5L563.0,235.4L561.2,225.6L553.5,229.3L541.8,226.8L527.2,231.0L522.3,239.4L514.8,244.7L510.1,240.5L508.6,237.1L504.1,232.8L503.2,230.0L491.7,219.7L476.5,217.6L464.8,203.1L457.7,207.4L445.9,202.1L441.4,202.3L430.7,206.3L427.5,198.6L423.2,194.7L419.0,207.1L408.4,204.1L398.5,195.6L382.0,195.6L382.0,190.5L364.3,200.2L347.2,217.0L344.3,194.9L352.3,184.0L350.8,178.1L343.8,169.2L355.2,166.3L369.0,155.4L383.5,150.0L376.0,135.1L369.4,125.2L381.6,109.6L391.5,106.2L399.2,108.2L402.5,102.8L418.7,101.7L440.0,104.8L450.9,104.7L471.0,109.7L488.9,110.4L524.0,106.5L545.8,101.8L590.3,99.9L614.1,100.2L628.9,97.0L645.0,87.3Z","lx":571.0,"ly":163.6},{"n":"마포구","d":"M-28.1,3.6L74.2,89.1L85.2,95.4L123.4,116.9L155.5,126.2L162.0,129.8L173.6,141.2L166.2,154.4L165.0,170.0L196.5,184.6L195.6,191.9L197.0,199.2L202.4,204.7L214.1,195.5L240.2,184.9L315.8,179.3L330.8,180.4L343.8,169.2L350.8,178.1L352.3,184.0L344.3,194.9L347.2,217.0L355.1,228.4L354.1,234.9L340.7,243.5L335.9,250.2L324.1,258.1L322.0,270.5L325.9,276.3L319.9,280.7L313.5,294.6L305.1,298.1L302.4,304.0L289.0,315.8L277.1,319.6L266.0,318.6L259.3,323.5L256.6,331.1L254.8,328.2L225.9,305.1L203.5,291.7L182.9,281.9L54.0,282.1L40.5,264.6L33.9,252.8L24.0,239.7L2.3,230.8L-30.5,212.7L-102.2,166.0L-128.9,149.7L-142.5,143.0L-194.6,101.9L-207.0,86.9L-207.0,73.9L-178.2,66.8L-178.1,64.7L-149.3,50.3L-131.8,50.0L-120.5,46.9L-103.6,45.1L-91.6,45.8L-84.6,35.7L-89.6,26.0L-87.6,19.9L-87.4,3.1L-85.1,-6.1L-77.0,-9.4L-70.8,-27.0L-62.1,-35.3L-42.5,-11.1Z","lx":89.5,"ly":194.9},{"n":"성북구","d":"M467.3,-324.5L485.1,-313.2L487.8,-305.2L495.1,-304.0L507.0,-296.7L521.3,-281.4L535.4,-262.8L548.1,-259.3L557.1,-254.7L559.0,-250.2L567.5,-247.7L579.2,-248.8L577.8,-232.6L575.9,-228.3L579.6,-219.2L590.4,-208.0L590.7,-203.0L594.9,-199.2L607.4,-194.3L612.8,-188.8L623.4,-190.5L629.7,-187.2L643.1,-175.4L651.1,-173.3L652.0,-167.6L675.9,-175.9L693.0,-173.9L693.4,-152.1L722.7,-174.2L726.5,-174.3L730.4,-177.7L732.4,-182.9L741.2,-191.8L743.1,-195.8L763.5,-214.8L776.5,-238.1L792.7,-250.4L804.8,-237.4L816.5,-221.7L825.3,-214.9L831.9,-206.7L848.4,-195.1L850.5,-190.4L853.9,-187.6L862.4,-186.5L886.5,-193.8L896.8,-193.4L904.8,-181.2L901.4,-143.5L898.9,-142.5L897.8,-139.7L895.2,-141.2L873.1,-129.7L870.4,-132.0L856.1,-127.4L848.9,-116.8L845.5,-114.1L845.3,-110.9L840.7,-101.2L830.8,-104.1L804.6,-95.4L800.1,-101.9L792.7,-92.9L789.2,-82.5L780.3,-69.7L777.5,-69.0L771.2,-72.7L767.4,-71.1L752.4,-71.7L743.9,-59.6L736.3,-38.1L723.8,-37.8L724.3,-31.1L722.9,-28.2L703.0,-3.2L703.8,-2.3L700.4,-0.3L689.7,16.9L657.9,44.2L656.2,48.1L655.1,44.8L650.4,41.4L648.2,41.5L637.9,46.4L638.5,47.5L636.6,48.7L631.4,49.7L629.3,46.1L632.3,40.3L625.4,28.7L624.2,23.1L622.5,21.6L618.7,22.6L614.7,19.1L604.6,25.4L599.2,24.0L593.1,32.5L583.2,31.1L573.6,19.0L575.2,7.8L569.0,-10.7L560.8,-12.0L559.0,-15.7L559.5,-17.0L557.1,-18.2L556.4,-21.0L551.1,-24.0L546.6,-31.1L548.0,-38.9L544.0,-45.0L538.7,-44.4L531.2,-46.0L520.9,-43.7L515.5,-44.8L513.4,-42.4L484.1,-38.3L480.6,-42.6L471.3,-47.8L466.6,-57.5L464.9,-58.8L456.8,-58.7L444.8,-64.5L441.8,-67.7L432.7,-71.3L426.8,-79.6L421.4,-79.8L420.5,-81.0L424.0,-88.7L425.4,-95.9L429.5,-100.9L439.6,-103.9L450.3,-108.9L457.5,-115.1L466.5,-116.6L471.2,-120.3L471.6,-133.6L468.3,-141.9L472.0,-151.4L467.1,-155.3L466.0,-167.6L468.5,-179.4L470.7,-184.3L460.3,-197.3L453.3,-218.2L455.8,-230.3L446.5,-250.8L435.2,-263.9L438.1,-273.9L436.8,-278.0L429.1,-282.7L411.5,-280.8L412.2,-295.2L426.0,-312.4L444.4,-318.3L456.1,-328.8Z","lx":null,"ly":null},{"n":"노원구","d":"M1077.2,-225.4L1057.5,-223.2L1053.0,-219.7L1043.4,-225.2L1031.8,-220.1L1029.5,-216.7L1020.6,-216.5L1016.5,-210.6L1014.4,-210.3L992.1,-223.9L988.0,-222.4L981.0,-224.7L954.1,-217.8L924.2,-204.8L903.0,-199.8L896.8,-193.4L886.5,-193.8L862.4,-186.5L855.3,-187.2L850.7,-190.3L848.4,-195.1L831.9,-206.7L825.3,-214.9L816.5,-221.7L804.8,-237.4L792.7,-250.4L779.0,-271.3L765.6,-279.7L751.5,-296.7L763.0,-309.6L768.5,-325.0L768.7,-330.3L773.6,-338.1L777.5,-349.7L777.3,-359.4L789.1,-365.3L792.6,-374.1L800.9,-382.5L809.1,-362.3L818.1,-352.4L820.1,-360.1L820.3,-373.7L822.8,-381.1L823.7,-396.9L821.7,-404.5L814.1,-419.5L813.1,-429.0L814.7,-444.7L811.4,-464.0L801.4,-482.8L801.2,-505.6L788.5,-528.8L784.8,-547.4L788.2,-577.7L792.6,-587.5L798.7,-609.2L800.3,-621.5L803.9,-627.6L803.2,-654.0L820.4,-667.8L836.8,-670.9L843.4,-675.1L851.5,-687.0L857.6,-692.5L858.9,-702.9L863.0,-704.8L878.1,-701.8L885.9,-703.9L892.6,-697.0L910.7,-697.8L922.5,-707.0L939.5,-712.0L954.5,-713.1L968.5,-701.0L968.5,-685.0L974.9,-676.0L981.9,-672.9L1002.6,-670.8L1015.4,-673.4L1028.7,-659.5L1030.5,-644.9L1027.4,-638.5L1019.7,-630.6L1012.7,-618.6L1012.2,-608.9L1007.9,-603.4L1009.1,-596.0L1017.6,-587.2L1021.5,-567.1L1027.3,-561.6L1027.3,-548.3L1029.7,-536.8L1023.3,-528.9L1021.8,-511.7L1025.5,-505.1L1019.0,-501.3L1004.0,-475.8L1003.7,-468.8L1007.5,-463.6L1009.9,-451.1L1018.3,-430.6L1010.5,-413.9L1016.4,-394.1L1020.7,-389.1L1021.2,-380.9L1036.4,-377.0L1057.0,-382.2L1068.9,-386.8L1082.4,-386.1L1088.1,-383.5L1096.2,-369.9L1103.7,-369.1L1111.2,-353.9L1102.7,-347.4L1112.5,-328.9L1112.1,-314.6L1108.0,-312.0L1111.1,-304.2L1108.2,-296.9L1094.2,-282.8L1079.3,-270.1L1070.9,-244.0L1069.6,-233.6L1073.9,-233.1Z","lx":null,"ly":null},{"n":"서대문구","d":"M301.4,-95.5L299.6,-87.6L309.2,-90.0L325.3,-82.6L330.4,-62.5L322.6,-52.8L324.1,-39.5L321.6,-21.8L322.3,-4.6L325.0,5.6L322.7,19.3L325.8,26.6L321.0,35.3L313.2,36.2L302.4,42.2L312.0,56.3L326.7,72.0L369.4,125.2L376.0,135.1L383.5,150.0L369.0,155.4L355.2,166.3L343.8,169.2L330.8,180.4L315.8,179.3L240.2,184.9L214.1,195.5L202.4,204.7L197.0,199.2L195.6,191.9L196.5,184.6L165.0,170.0L166.2,154.4L173.6,141.2L162.0,129.8L155.5,126.2L123.4,116.9L74.2,89.1L40.0,59.8L38.7,56.3L85.2,2.5L94.9,-12.3L109.4,-4.3L111.0,14.2L125.7,12.3L135.7,15.2L140.3,11.9L140.7,4.0L149.9,-5.4L151.0,-11.5L163.5,-12.8L172.1,-19.8L170.1,-26.3L170.9,-40.3L183.6,-59.4L196.6,-70.7L205.3,-72.8L220.8,-80.7L226.3,-78.4L237.8,-86.2L240.3,-98.8L232.4,-106.5L233.1,-114.2L239.6,-114.6L244.1,-126.2L252.0,-126.8L252.4,-134.3L264.9,-141.9L277.7,-152.4L286.1,-162.7L287.3,-148.2L291.6,-146.0L298.1,-132.4L305.0,-127.0L296.4,-110.4Z","lx":245.1,"ly":102.3},{"n":"양천구","d":"M-106.8,246.3L-83.0,245.6L-68.6,239.2L-51.0,262.9L-50.8,267.0L-44.9,276.3L-44.5,281.0L-39.3,295.3L-30.5,312.3L-21.8,324.8L-21.4,331.6L-28.3,337.4L-28.9,341.0L-26.3,343.2L-20.1,343.4L-18.1,344.8L-24.2,355.1L-32.2,352.9L-36.0,354.2L-51.3,364.0L-53.5,370.9L-55.8,373.0L-67.9,370.2L-69.5,372.1L-66.6,377.8L-67.8,381.7L-76.2,383.0L-78.9,385.3L-79.6,389.6L-75.4,415.9L-81.7,425.3L-80.6,431.0L-74.6,434.9L-76.2,435.9L-79.3,435.2L-80.1,436.5L-77.7,439.6L-81.5,443.9L-83.9,450.4L-84.6,455.5L-83.3,461.8L-84.5,462.4L-89.7,460.3L-92.0,467.8L-97.2,468.4L-103.5,476.4L-102.8,478.7L-100.3,479.5L-98.6,477.3L-99.0,473.5L-97.1,472.2L-89.2,477.5L-91.0,479.4L-96.2,478.0L-97.1,480.7L-95.4,486.8L-99.1,488.3L-102.7,487.7L-103.7,488.8L-103.7,492.5L-99.3,494.9L-97.9,498.6L-100.7,500.8L-99.7,506.3L-104.7,517.7L-105.3,525.4L-114.3,521.3L-120.3,511.3L-130.3,517.0L-146.8,512.4L-150.2,514.0L-151.0,516.0L-156.1,515.8L-160.2,508.8L-160.3,503.5L-153.7,494.7L-166.0,502.6L-172.3,504.9L-183.1,484.5L-196.9,489.4L-204.9,482.6L-214.5,480.9L-228.0,486.3L-232.1,491.2L-237.8,488.1L-240.6,488.0L-244.4,492.3L-245.6,496.3L-250.7,499.9L-258.2,510.8L-264.6,512.7L-272.7,509.4L-280.0,519.7L-284.6,520.2L-289.3,527.2L-300.7,529.8L-307.1,526.5L-309.3,523.1L-317.2,518.2L-324.1,507.9L-322.2,496.8L-332.6,493.5L-339.4,492.5L-342.4,493.6L-343.6,481.2L-357.1,480.6L-358.8,478.4L-356.0,463.6L-356.7,455.3L-361.1,452.1L-362.6,444.0L-355.5,434.4L-349.8,419.2L-352.2,400.4L-344.0,386.8L-336.9,382.2L-335.5,376.6L-342.4,357.3L-350.1,356.4L-361.0,338.6L-360.3,331.2L-368.6,324.4L-366.0,313.4L-366.6,304.5L-370.3,293.0L-367.6,286.8L-351.0,280.4L-347.5,272.2L-347.8,259.8L-337.8,242.6L-328.7,241.5L-325.1,254.0L-328.9,267.2L-326.3,274.2L-327.5,280.5L-311.6,279.3L-308.4,292.2L-301.2,307.0L-305.0,313.9L-274.0,378.0L-231.3,369.0L-154.3,356.8L-157.0,316.8L-155.2,288.1L-163.7,262.3L-153.1,219.5L-145.2,222.7L-122.2,240.1Z","lx":null,"ly":null},{"n":"영등포구","d":"M-70.2,186.6L-30.5,212.7L2.3,230.8L24.0,239.7L33.9,252.8L40.5,264.6L54.0,282.1L182.9,281.9L203.5,291.7L225.9,305.1L254.8,328.2L283.6,374.6L283.7,435.7L282.0,435.0L229.6,444.9L203.4,446.0L194.4,448.1L177.2,449.2L166.3,448.4L165.3,455.7L166.9,458.2L165.9,465.9L158.8,467.8L132.8,548.0L132.6,557.8L128.3,563.7L102.9,570.3L93.2,571.7L45.7,644.6L38.1,643.2L19.9,632.2L10.4,617.9L1.9,579.7L-1.0,559.9L-3.6,550.1L-7.0,544.6L-5.6,531.0L-7.6,527.4L-5.5,518.7L-1.6,517.2L-1.4,515.7L-14.1,481.5L-18.2,479.7L-22.7,472.9L-23.1,469.6L-30.0,468.9L-32.6,464.6L-49.1,460.1L-58.8,446.9L-80.6,431.0L-81.7,425.3L-75.4,415.9L-79.7,387.1L-76.2,383.0L-67.8,381.7L-66.6,377.8L-69.3,373.5L-69.1,371.2L-64.0,370.3L-58.7,373.1L-55.8,373.0L-53.5,370.9L-51.3,364.0L-36.0,354.2L-32.2,352.9L-24.2,355.1L-18.1,344.8L-20.1,343.4L-26.3,343.2L-28.9,341.0L-28.3,337.4L-21.4,331.6L-21.8,324.8L-30.5,312.3L-39.3,295.3L-44.5,281.0L-44.9,276.3L-50.8,267.0L-51.0,262.9L-68.6,239.2L-82.5,216.0L-83.0,206.5L-76.6,206.7L-76.5,196.4Z","lx":104.5,"ly":376.5},{"n":"용산구","d":"M423.2,194.7L427.5,198.6L430.7,206.3L441.4,202.3L445.9,202.1L457.7,207.4L464.8,203.1L476.5,217.6L491.7,219.7L503.2,230.0L504.1,232.8L508.6,237.1L510.1,240.5L514.8,244.7L522.3,239.4L527.2,231.0L541.8,226.8L553.5,229.3L561.2,225.6L563.0,235.4L570.4,238.5L564.7,251.5L576.2,266.4L584.9,264.6L583.8,278.3L589.8,295.1L597.7,297.5L609.8,297.2L628.5,306.3L628.0,329.8L615.7,341.8L601.8,358.4L572.2,397.4L533.7,430.5L491.6,464.1L465.4,506.2L427.8,506.1L412.9,503.1L386.8,490.4L370.9,485.0L360.6,478.7L341.3,461.7L308.2,445.2L283.7,435.7L283.6,374.6L256.6,331.1L259.3,323.5L266.0,318.6L277.1,319.6L289.0,315.8L302.4,304.0L305.1,298.1L313.5,294.6L319.9,280.7L325.9,276.3L322.0,270.5L324.1,258.1L335.9,250.2L340.7,243.5L354.1,234.9L355.1,228.4L347.2,217.0L364.3,200.2L382.0,190.5L382.0,195.6L398.5,195.6L408.4,204.1L419.0,207.1Z","lx":434.8,"ly":345.3}]};
+const DONG = [{"gu":"강남구","name":"개포동","area":214909.6,"rawArea":214909.6,"hh":23888,"rawHh":23888},{"gu":"강남구","name":"논현동","area":256654.4,"rawArea":256654.4,"hh":14101,"rawHh":14101},{"gu":"강남구","name":"대치동","area":254027.3,"rawArea":254027.3,"hh":23995,"rawHh":23995},{"gu":"강남구","name":"도곡동","area":273746.6,"rawArea":273746.6,"hh":16510,"rawHh":16510},{"gu":"강남구","name":"삼성동","area":183354.0,"rawArea":183354.0,"hh":14292,"rawHh":14292},{"gu":"강남구","name":"세곡동","area":55955.0,"rawArea":55955.0,"hh":4089,"rawHh":4089},{"gu":"강남구","name":"수서동","area":58159.0,"rawArea":58159.0,"hh":8645,"rawHh":8645},{"gu":"강남구","name":"신사동","area":54766.0,"rawArea":54766.0,"hh":2406,"rawHh":2406},{"gu":"강남구","name":"압구정동","area":109587.8,"rawArea":109587.8,"hh":10335,"rawHh":10335},{"gu":"강남구","name":"역삼동","area":252640.8,"rawArea":252640.8,"hh":22041,"rawHh":22041},{"gu":"강남구","name":"율현동","area":12610.4,"rawArea":12610.4,"hh":650,"rawHh":650},{"gu":"강남구","name":"일원동","area":647384.1,"rawArea":647384.1,"hh":15199,"rawHh":15199},{"gu":"강남구","name":"자곡동","area":96437.5,"rawArea":96437.5,"hh":7020,"rawHh":7020},{"gu":"강남구","name":"청담동","area":143031.1,"rawArea":143031.1,"hh":8214,"rawHh":8214},{"gu":"서초구","name":"내곡동","area":27567.9,"rawArea":27567.9,"hh":2385,"rawHh":2385},{"gu":"서초구","name":"반포동","area":278220.8,"rawArea":278220.8,"hh":24557,"rawHh":24557},{"gu":"서초구","name":"방배동","area":472062.1,"rawArea":472062.1,"hh":27916,"rawHh":27916},{"gu":"서초구","name":"서초동","area":393427.6,"rawArea":393427.6,"hh":33184,"rawHh":33184},{"gu":"서초구","name":"신원동","area":34692.2,"rawArea":34692.2,"hh":2294,"rawHh":2294},{"gu":"서초구","name":"양재동","area":179183.7,"rawArea":179183.7,"hh":11440,"rawHh":11440},{"gu":"서초구","name":"염곡동","area":1263.8,"rawArea":1263.8,"hh":22,"rawHh":22},{"gu":"서초구","name":"우면동","area":94731.1,"rawArea":94731.1,"hh":9515,"rawHh":9515},{"gu":"서초구","name":"원지동","area":225.0,"rawArea":225.0,"hh":7,"rawHh":7},{"gu":"서초구","name":"잠원동","area":162617.4,"rawArea":162617.4,"hh":19401,"rawHh":19401},{"gu":"송파구","name":"가락동","area":222204.9,"rawArea":431694.5,"hh":23205,"rawHh":23205},{"gu":"송파구","name":"거여동","area":142768.8,"rawArea":142768.8,"hh":14938,"rawHh":14938},{"gu":"송파구","name":"마천동","area":93060.2,"rawArea":923170.2,"hh":6928,"rawHh":6932},{"gu":"송파구","name":"문정동","area":138846.5,"rawArea":162469.9,"hh":11938,"rawHh":11938},{"gu":"송파구","name":"방이동","area":168750.1,"rawArea":168750.1,"hh":10444,"rawHh":10444},{"gu":"송파구","name":"삼전동","area":153463.7,"rawArea":153463.7,"hh":10878,"rawHh":10878},{"gu":"송파구","name":"석촌동","area":163176.1,"rawArea":163176.1,"hh":11596,"rawHh":11596},{"gu":"송파구","name":"송파동","area":169403.2,"rawArea":169403.2,"hh":12293,"rawHh":12293},{"gu":"송파구","name":"신천동","area":58271.1,"rawArea":58271.1,"hh":8507,"rawHh":8507},{"gu":"송파구","name":"오금동","area":105322.2,"rawArea":105322.2,"hh":8353,"rawHh":8353},{"gu":"송파구","name":"잠실동","area":215347.9,"rawArea":215347.9,"hh":27712,"rawHh":27712},{"gu":"송파구","name":"장지동","area":123094.8,"rawArea":123094.8,"hh":15438,"rawHh":15438},{"gu":"송파구","name":"풍납동","area":83380.0,"rawArea":195052.3,"hh":7410,"rawHh":7410},{"gu":"강동구","name":"강일동","area":119703.4,"rawArea":119703.4,"hh":13260,"rawHh":13260},{"gu":"강동구","name":"고덕동","area":141020.8,"rawArea":141020.8,"hh":14417,"rawHh":14417},{"gu":"강동구","name":"길동","area":168585.2,"rawArea":168585.2,"hh":15531,"rawHh":15531},{"gu":"강동구","name":"둔촌동","area":151855.5,"rawArea":151855.5,"hh":19834,"rawHh":19834},{"gu":"강동구","name":"명일동","area":108362.0,"rawArea":108362.0,"hh":12577,"rawHh":12577},{"gu":"강동구","name":"상일동","area":169143.8,"rawArea":169143.8,"hh":17879,"rawHh":17879},{"gu":"강동구","name":"성내동","area":250703.5,"rawArea":250703.5,"hh":18415,"rawHh":18415},{"gu":"강동구","name":"암사동","area":203057.5,"rawArea":203057.5,"hh":19292,"rawHh":19292},{"gu":"강동구","name":"천호동","area":277535.2,"rawArea":277535.2,"hh":23149,"rawHh":23149},{"gu":"관악구","name":"남현동","area":73276.8,"rawArea":73276.8,"hh":4337,"rawHh":4337},{"gu":"관악구","name":"봉천동","area":555872.7,"rawArea":555872.7,"hh":52754,"rawHh":52754},{"gu":"관악구","name":"신림동","area":552388.6,"rawArea":564845.6,"hh":49038,"rawHh":49038},{"gu":"광진구","name":"광장동","area":99040.3,"rawArea":99040.3,"hh":10169,"rawHh":10169},{"gu":"광진구","name":"구의동","area":291441.3,"rawArea":570736.7,"hh":20540,"rawHh":20540},{"gu":"광진구","name":"군자동","area":46162.2,"rawArea":46162.2,"hh":3036,"rawHh":3036},{"gu":"광진구","name":"능동","area":32005.9,"rawArea":32005.9,"hh":1929,"rawHh":1929},{"gu":"광진구","name":"자양동","area":285096.8,"rawArea":323392.7,"hh":25282,"rawHh":25282},{"gu":"광진구","name":"중곡동","area":255988.5,"rawArea":255988.5,"hh":15958,"rawHh":15958},{"gu":"광진구","name":"화양동","area":31281.7,"rawArea":31281.7,"hh":3563,"rawHh":3563},{"gu":"동작구","name":"노량진동","area":60011.8,"rawArea":60011.8,"hh":7072,"rawHh":7072},{"gu":"동작구","name":"대방동","area":106564.8,"rawArea":143054.5,"hh":10558,"rawHh":10558},{"gu":"동작구","name":"동작동","area":21780.2,"rawArea":21780.2,"hh":1522,"rawHh":1522},{"gu":"동작구","name":"본동","area":28530.2,"rawArea":28530.2,"hh":3557,"rawHh":3557},{"gu":"동작구","name":"사당동","area":313130.5,"rawArea":313130.5,"hh":26087,"rawHh":26087},{"gu":"동작구","name":"상도1동","area":35739.5,"rawArea":35739.5,"hh":2377,"rawHh":2377},{"gu":"동작구","name":"상도동","area":461319.3,"rawArea":492504.8,"hh":34742,"rawHh":34742},{"gu":"동작구","name":"신대방동","area":124315.5,"rawArea":124315.5,"hh":12038,"rawHh":12038},{"gu":"동작구","name":"흑석동","area":104254.4,"rawArea":104254.4,"hh":9413,"rawHh":9413},{"gu":"성동구","name":"금호동1가","area":43995.6,"rawArea":43995.6,"hh":5986,"rawHh":5986},{"gu":"성동구","name":"금호동2가","area":26874.0,"rawArea":26874.0,"hh":3058,"rawHh":3058},{"gu":"성동구","name":"금호동3가","area":35196.7,"rawArea":35196.7,"hh":3350,"rawHh":3350},{"gu":"성동구","name":"금호동4가","area":40658.2,"rawArea":40658.2,"hh":4811,"rawHh":4811},{"gu":"성동구","name":"도선동","area":10144.9,"rawArea":10144.9,"hh":615,"rawHh":615},{"gu":"성동구","name":"마장동","area":36847.4,"rawArea":53652.6,"hh":4858,"rawHh":4858},{"gu":"성동구","name":"사근동","area":9662.8,"rawArea":9662.8,"hh":986,"rawHh":986},{"gu":"성동구","name":"상왕십리동","area":9359.6,"rawArea":9359.6,"hh":990,"rawHh":990},{"gu":"성동구","name":"성수동1가","area":63492.3,"rawArea":79888.2,"hh":7560,"rawHh":7560},{"gu":"성동구","name":"성수동2가","area":50110.6,"rawArea":50110.6,"hh":4860,"rawHh":4860},{"gu":"성동구","name":"송정동","area":15486.9,"rawArea":15486.9,"hh":1379,"rawHh":1379},{"gu":"성동구","name":"옥수동","area":67227.0,"rawArea":67227.0,"hh":7899,"rawHh":7899},{"gu":"성동구","name":"용답동","area":17758.1,"rawArea":17758.1,"hh":1712,"rawHh":1712},{"gu":"성동구","name":"응봉동","area":33027.8,"rawArea":44284.0,"hh":3263,"rawHh":3263},{"gu":"성동구","name":"하왕십리동","area":68916.3,"rawArea":68916.3,"hh":8215,"rawHh":8215},{"gu":"성동구","name":"행당동","area":97741.0,"rawArea":140493.4,"hh":13679,"rawHh":13679},{"gu":"성동구","name":"홍익동","area":6018.2,"rawArea":6018.2,"hh":690,"rawHh":690}];
+const FAC={"동작구|대방동":0,"동작구|흑석동":2,"동작구|상도동":10,"관악구|신림동":21,"관악구|봉천동":28,"동작구|본동":1,"동작구|동작동":2,"동작구|사당동":9,"동작구|노량진동":1,"강남구|논현동":1,"동작구|상도1동":0,"동작구|신대방동":0,"강남구|자곡동":7,"강남구|역삼동":1,"광진구|능동":3,"강동구|고덕동":1,"강동구|암사동":24,"광진구|군자동":7,"강동구|강일동":5,"서초구|우면동":20,"강남구|청담동":4,"강남구|삼성동":3,"강남구|도곡동":0,"강남구|율현동":0,"강동구|천호동":8,"강동구|둔촌동":1,"광진구|중곡동":11,"강동구|상일동":4,"강남구|개포동":1,"강남구|일원동":1,"강남구|세곡동":18,"강남구|신사동":0,"강남구|수서동":0,"서초구|신원동":9,"서초구|양재동":10,"강동구|명일동":1,"서초구|방배동":24,"강남구|압구정동":0,"서초구|원지동":5,"관악구|남현동":2,"서초구|반포동":11,"서초구|서초동":26,"강남구|대치동":3,"광진구|구의동":8,"성동구|하왕십리동":4,"송파구|장지동":10,"송파구|송파동":8,"서초구|염곡동":1,"강동구|길동":5,"강동구|성내동":7,"성동구|행당동":3,"송파구|문정동":8,"성동구|옥수동":3,"성동구|마장동":0,"성동구|금호동1가":2,"성동구|성수동2가":2,"송파구|오금동":3,"송파구|거여동":2,"성동구|용답동":4,"성동구|사근동":0,"성동구|금호동2가":1,"송파구|방이동":10,"광진구|광장동":12,"송파구|가락동":5,"송파구|풍납동":5,"송파구|잠실동":6,"성동구|금호동3가":1,"송파구|삼전동":9,"서초구|잠원동":2,"광진구|화양동":14,"성동구|홍익동":1,"성동구|도선동":1,"송파구|석촌동":3,"성동구|상왕십리동":0,"성동구|금호동4가":1,"서초구|내곡동":13,"성동구|성수동1가":4,"광진구|자양동":15,"송파구|신천동":7,"성동구|응봉동":1,"송파구|마천동":4,"성동구|송정동":2};
+const PTS=[[1105.8,527.9],[878.0,257.7],[877.6,257.7],[828.4,167.8],[1106.8,527.0],[904.2,229.7],[693.4,183.4],[1039.2,227.0],[1008.9,526.1],[889.1,241.6],[905.1,246.7],[297.1,632.1],[885.8,235.2],[116.1,665.6],[660.3,788.5],[655.3,791.7],[231.8,657.8],[97.7,658.7],[240.6,756.9],[224.5,704.1],[132.6,727.5],[174.9,777.5],[1182.5,625.2],[1003.4,513.2],[1193.1,330.6],[754.0,190.3],[1194.9,344.0],[1193.1,344.0],[384.3,635.3],[415.5,666.5],[438.0,606.8],[391.7,677.0],[1064.5,264.1],[862.9,292.1],[1084.3,252.7],[1025.5,276.0],[1047.0,272.8],[1070.0,247.1],[724.2,771.6],[821.1,867.4],[647.9,787.6],[641.0,782.1],[672.7,781.2],[951.5,117.8],[826.6,854.1],[482.6,695.4],[669.1,157.7],[951.1,188.4],[884.9,241.2],[867.9,862.4],[995.2,126.9],[1055.3,804.1],[942.3,191.6],[778.4,427.5],[850.0,481.6],[783.9,514.6],[1076.4,778.0],[1063.6,778.4],[1091.6,710.1],[1071.4,779.8],[1051.2,777.5],[938.2,189.8],[966.2,302.7],[769.2,420.6],[822.9,395.8],[837.2,508.2],[1059.0,790.8],[844.0,492.6],[272.3,661.9],[314.0,651.3],[286.5,678.4],[834.4,885.8],[604.8,594.0],[657.1,763.3],[663.6,772.5],[973.1,130.2],[33.0,678.9],[951.1,179.7],[883.1,243.9],[851.9,845.0],[316.3,636.2],[293.4,677.0],[522.1,539.4],[1001.1,217.8],[960.2,307.7],[290.6,670.6],[156.5,640.3],[776.5,265.0],[288.3,678.0],[273.2,668.8],[652.1,806.0],[659.4,806.4],[617.2,605.9],[819.2,228.8],[856.9,241.2],[644.7,772.0],[912.0,239.3],[332.4,749.5],[324.6,796.3],[286.9,838.5],[284.7,783.9],[293.4,677.0],[290.6,670.6],[929.5,271.9],[893.7,304.5],[906.5,244.9],[942.3,191.6],[252.0,628.9],[277.3,662.4],[108.7,680.7],[307.2,671.1],[316.3,636.2],[286.5,678.9],[431.2,707.8],[304.9,776.1],[292.0,839.0],[236.0,750.4],[292.0,689.0],[326.9,784.4],[300.7,776.1],[156.5,640.3],[287.9,678.0],[56.8,663.7],[972.2,130.6],[966.2,302.2],[885.8,234.8],[889.1,242.1],[1079.7,250.8],[969.4,363.2],[951.5,117.8],[909.3,333.4],[962.1,182.0],[994.2,124.6],[910.2,310.5],[938.2,189.8],[1015.8,238.0],[919.4,296.7],[908.8,277.4],[942.8,294.9],[909.7,299.9],[889.5,241.2],[969.4,363.2],[1024.1,274.2],[1064.0,265.0],[1070.5,246.7],[905.1,285.7],[1047.0,271.5],[972.2,111.8],[934.1,307.2],[996.1,356.3],[892.7,341.7],[884.9,338.0],[1053.0,255.9],[1227.1,138.0],[1222.5,136.1],[1222.5,136.1],[1195.9,176.5],[1191.3,176.0],[1194.0,175.6],[1194.0,176.9],[1190.8,177.4],[1197.2,178.8],[1195.4,174.2],[1192.2,174.7],[1189.9,176.0],[1196.3,179.7],[1192.6,175.1],[1234.4,256.8],[1194.5,176.0],[1192.6,176.0],[1193.1,179.7],[1225.7,141.2],[1251.0,269.6],[1217.4,278.8],[1226.6,140.2],[1246.4,264.1],[435.8,726.1],[224.5,704.1],[1221.6,140.7],[1224.3,140.7],[255.7,664.7],[246.1,743.1],[224.0,702.7],[1255.1,534.8],[823.8,553.6],[956.6,512.8],[939.1,655.5],[553.8,639.4],[1029.1,544.9],[925.3,178.3],[881.3,286.6],[875.3,328.8],[168.5,631.6],[1088.4,489.4],[219.9,625.7],[1004.3,275.1],[1018.6,207.2],[923.0,157.2],[1322.2,238.9],[1225.7,188.4],[1198.6,328.8],[1152.7,517.8],[1123.3,550.4],[1238.6,682.5],[1103.1,468.7],[1133.4,326.5],[1199.1,411.4],[1026.4,169.1],[1220.7,582.1],[297.1,580.2],[384.3,639.4],[390.3,659.1],[395.8,641.7],[284.7,574.3],[310.8,570.6],[251.6,482.5],[358.1,514.2],[336.5,531.1],[253.4,588.5],[441.3,648.1],[446.8,582.5],[293.8,462.8],[315.0,573.8],[256.6,508.2],[385.7,683.0],[444.5,563.3],[324.6,566.5],[326.9,568.8],[252.5,539.4],[626.4,268.7],[814.7,161.4],[709.9,231.1],[733.8,246.7],[614.0,252.2],[652.5,260.5],[653.0,208.6],[755.9,254.9],[702.6,185.2],[700.8,122.8],[690.7,157.7],[651.2,224.2],[697.5,157.2],[811.0,157.2],[737.0,257.7],[836.2,172.8],[896.9,187.5],[650.7,180.2],[658.5,181.1],[612.6,256.3],[893.2,200.8],[689.7,101.7],[862.0,843.6],[724.2,771.1],[542.8,572.9],[930.9,847.7],[825.2,874.3],[832.6,862.9],[839.5,836.7],[867.9,847.3],[708.1,718.3],[481.7,544.4],[828.9,879.4],[848.6,832.1],[528.5,557.8],[737.5,657.8],[955.2,452.7],[1064.5,444.0],[754.5,715.1],[1051.6,442.6],[1244.5,534.8],[1195.9,555.9],[483.5,697.7],[795.4,841.7],[989.2,312.8],[1246.4,705.0],[1106.8,527.0],[1167.4,630.7],[795.8,842.7],[794.0,839.5],[793.5,838.5],[1221.1,629.3],[1036.5,514.2],[645.2,754.1],[632.8,772.5],[1146.3,686.7],[639.2,767.4],[742.5,662.4],[1165.5,691.7],[943.3,478.4],[752.2,715.6],[1127.9,417.8],[1043.4,520.1],[1025.0,511.4],[994.2,524.3],[1009.4,525.6],[796.7,845.0],[816.0,839.5],[1230.8,574.3],[877.1,858.7],[945.1,840.4],[1172.0,734.4],[534.0,674.7],[465.6,678.4],[1145.8,560.5],[567.6,471.0],[1226.2,420.6],[462.9,654.1],[822.0,847.3],[1152.7,312.8],[874.4,852.8],[1155.0,309.5],[1119.6,497.6],[1127.0,541.2],[882.2,860.6],[879.4,844.0],[875.7,840.8],[937.3,841.7],[699.8,659.6],[800.0,792.7],[1273.0,538.9],[759.1,700.4],[652.1,530.7],[666.3,599.0],[1231.2,419.2],[1229.4,420.1],[1014.9,536.6],[980.0,512.3],[511.5,655.0],[1212.8,496.3],[681.5,778.4],[649.8,787.6],[583.2,493.5],[713.6,799.1],[1214.2,632.1],[627.7,569.7],[1267.0,612.3],[656.7,793.1],[1058.5,578.4],[674.6,795.9],[665.9,789.4],[640.6,782.1],[522.6,541.2],[608.0,524.7],[1099.4,351.8],[758.2,774.8],[1097.1,396.3],[673.2,781.2],[657.6,545.4],[990.6,472.0],[643.3,533.4],[1010.8,531.1],[598.3,640.3],[1223.4,449.0],[579.0,639.4],[1170.6,477.9],[576.3,637.1],[1296.0,568.8],[575.4,640.8],[1197.7,696.3],[562.1,631.2],[1190.8,672.0],[587.3,664.7],[608.9,649.5],[1068.6,442.1],[671.4,640.3],[531.7,650.0],[540.5,570.1],[507.4,564.2],[608.0,500.4],[1212.4,684.8],[1195.4,669.7],[1064.0,449.5],[1176.6,693.1],[1095.3,372.4],[1060.8,438.9],[1345.1,555.9],[1345.6,572.0],[588.7,661.0],[613.5,653.6],[626.8,600.4],[656.2,622.0],[642.4,644.5],[664.0,648.6],[557.9,689.0],[512.0,611.4],[460.6,603.2],[485.4,598.1],[516.6,678.0],[510.6,670.2],[535.0,619.2],[567.1,546.3],[533.6,530.7],[1004.8,273.3],[511.5,602.7],[1125.6,448.6],[1079.7,511.9],[1102.6,219.6],[981.4,516.5],[1167.4,619.7],[1204.6,653.6],[1269.8,588.0],[712.7,146.7],[223.6,546.7],[1263.4,666.5],[1139.8,673.4],[291.1,680.3],[996.1,518.3],[687.0,649.1],[1042.9,447.2],[664.9,536.6],[1149.9,482.0],[509.7,706.4],[502.8,665.6],[485.4,774.8],[487.7,761.0],[488.1,764.7],[484.4,756.9],[486.3,765.6],[490.9,767.0],[648.9,644.5],[487.2,756.9],[1099.4,761.5],[1044.3,711.9],[1045.2,713.3],[1217.9,280.2],[1054.9,721.5],[1062.2,791.7],[1071.4,780.7],[1050.7,724.3],[1094.4,713.3],[837.2,508.2],[844.0,492.6],[1076.9,775.7],[786.6,674.3],[767.4,419.2],[1241.3,335.2],[1423.2,126.9],[1193.6,355.4],[1201.4,207.7],[1187.6,215.9],[1052.1,778.4],[1054.4,768.3],[696.6,430.2],[1145.3,762.8],[1005.7,747.2],[1057.2,798.6],[1056.2,786.7],[1070.9,777.1],[1062.2,776.6],[1053.5,782.1],[1238.6,322.4],[1426.9,222.8],[1233.5,312.8],[1236.7,322.4],[1237.6,320.1],[1243.6,304.5],[1434.7,234.8],[1237.6,258.6],[1340.5,219.2],[1421.4,169.6],[1412.6,152.6],[1444.8,136.6],[1323.5,167.8],[1169.7,354.5],[1292.3,363.2],[1430.1,218.7],[1176.1,287.5],[1263.8,254.5],[1446.6,102.6],[296.6,632.1],[273.2,668.8],[269.0,657.3]];
+const MONTH_RAIN = [16.8, 28.2, 36.9, 72.9, 103.6, 129.5, 414.4, 348.2, 141.5, 52.2, 51.1, 22.6]; // 기상청 서울 평년값 1991~2020
+const RAIN_M = 1417.9/1000, RUNOFF = 0.85, PRICE = 1100, SMALL_HH = 100;
+const GUS = ["강남구", "서초구", "송파구", "강동구", "관악구", "광진구", "동작구", "성동구"];
+const LBL_SHORT = n => n.replace(/^(금호|성수)동(\d)가$/, "$1$2가").replace(/동$/, "");
+const METRIC_LABEL = { perHH: "세대당 지급액", paid: "개인지급 총액", surplus: "관리비 귀속액", fac: "빗물이용시설 수" };
+const NS = "http://www.w3.org/2000/svg";
+const key = (gu, name) => gu + "|" + name;
+
+const fmt = n => Math.round(n).toLocaleString("ko-KR");
+function short(n) {
+  if (n >= 1e8) return (n/1e8).toFixed(n >= 1e9 ? 1 : 2).replace(/\.?0+$/,"") + "억";
+  if (n >= 1e4) return (n/1e4).toFixed(n >= 1e5 ? 0 : 1) + "만";
+  return fmt(n);
+}
+
+const $ = id => document.getElementById(id);
+const refundEl = $("refundRate"), capEl = $("cap"), cleanEl = $("cleanToggle");
+const svg = $("map"), tip = $("tip"), mapzone = $("mapzone");
+let metric = "perHH", guFilter = "all", selected = "강남구|일원동", rows = [], tab = "";
+const capture = () => Number($("capture").value) / 100;
+let sampleCap = null, downloadsCap = null, capsChecked = false;
+
+/* ---------- color ramp ---------- */
+function isDark() {
+  const t = document.documentElement.getAttribute("data-theme");
+  if (t) return t === "dark";
+  return matchMedia("(prefers-color-scheme: dark)").matches;
+}
+function color(t) {
+  // t: -1(평균보다 훨씬 낮음, 파랑) ~ 0(평균) ~ +1(평균보다 훨씬 높음, 빨강)
+  t = Math.max(-1, Math.min(1, t));
+  const dark = isDark();
+  const neutral = dark ? { h: 200, s: 10, l: 22 } : { h: 200, s: 14, l: 93 };
+  const blue    = dark ? { h: 212, s: 68, l: 56 } : { h: 214, s: 72, l: 42 };
+  const red     = dark ? { h: 8,   s: 70, l: 58 } : { h: 6,   s: 74, l: 46 };
+  const to = t < 0 ? blue : red;
+  const k = Math.abs(t);
+  const h = neutral.h + (to.h - neutral.h) * k;
+  const s = neutral.s + (to.s - neutral.s) * k;
+  const l = neutral.l + (to.l - neutral.l) * k;
+  const darkText = dark ? l > 45 : l >= 60;
+  return { fill: `hsl(${h.toFixed(1)},${s.toFixed(1)}%,${l.toFixed(1)}%)`,
+           text: darkText ? (dark ? "#0f1613" : "#14231c") : (dark ? "#e8efeb" : "#f4f8f5") };
+}
+const FAC_BINS = [[0, 0, "0"], [1, 2, "1–2"], [3, 5, "3–5"], [6, 10, "6–10"], [11, 20, "11–20"], [21, 1e9, "21+"]];
+function facColor(c) {
+  const k = FAC_BINS.findIndex(b => c >= b[0] && c <= b[1]);
+  const dark = isDark(), t = k / (FAC_BINS.length - 1);
+  const l = dark ? 20 + t * 52 : 94 - t * 66, s = dark ? 18 + t * 40 : 16 + t * 52, h = 168 + t * 22;
+  const darkText = dark ? l > 48 : l >= 58;
+  return { fill: `hsl(${h.toFixed(0)},${s.toFixed(0)}%,${l.toFixed(0)}%)`, text: darkText ? (dark ? "#0f1613" : "#14231c") : (dark ? "#e8efeb" : "#f4f8f5") };
+}
+function paintFacLegend() {
+  $("facLegend").innerHTML = '<span>시설 수</span>' + FAC_BINS.map(b => `<span><i style="background:${facColor(b[0]).fill}"></i>${b[2]}</span>`).join("") + '<span><i class="dotk"></i>시설 위치</span>';
+}
+const valTxt = r => metric === "fac" ? r.fac + "곳" : fmt(r[metric]) + "원";
+function paintRamp() {
+  $("ramp").style.background = `linear-gradient(90deg, ${[-1,-.5,0,.5,1].map(t => color(t).fill + " " + ((t+1)/2*100) + "%").join(",")})`;
+}
+
+/* ---------- build map ---------- */
+function el(tag, attrs = {}, parent) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+svg.setAttribute("viewBox", `0 0 ${GEO.w} ${GEO.h}`);
+const pat = el("pattern", { id: "capHatch", width: 9, height: 9, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, el("defs", {}, svg));
+el("rect", { width: 2.2, height: 9, style: "fill:var(--ink)", opacity: .22 }, pat);
+
+const ctxG = el("g", { class: "ctx" }, svg);
+GEO.ctx.forEach(c => {
+  el("path", { d: c.d }, ctxG);
+  if (c.lx != null) el("text", { x: c.lx, y: c.ly }, ctxG).textContent = c.n;
+});
+const dongG = el("g", {}, svg), hatchG = el("g", { "pointer-events": "none" }, svg);
+const guG = el("g", {}, svg);
+GEO.gus.forEach(g => el("path", { d: g.d, class: "gu-outline" }, guG));
+const selRing = el("path", { class: "sel-ring" }, svg);
+const lblG = el("g", {}, svg);
+
+const hasData = new Set(DONG.map(d => key(d.gu, d.name)));
+const shapes = {}, hatches = {}, labels = {}, geoByKey = {};
+GEO.dongs.forEach(g => {
+  const k = key(g.gu, g.name); geoByKey[k] = g;
+  const p = el("path", { d: g.d, class: "dong", "data-gu": g.gu }, dongG);
+  shapes[k] = p;
+  if (!hasData.has(k)) {
+    p.classList.add("nodata");
+    p.addEventListener("pointermove", e => showTipText(`<b>${g.gu} ${g.name}</b> · 결과표에 없음`, e));
+    p.addEventListener("pointerleave", hideTip);
+  } else {
+    p.setAttribute("tabindex", 0); p.setAttribute("role", "button");
+    p.addEventListener("pointermove", e => showTip(k, e));
+    p.addEventListener("pointerleave", hideTip);
+    p.addEventListener("click", () => select(k));
+    p.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(k); } });
+    hatches[k] = el("path", { d: g.d, fill: "url(#capHatch)", opacity: 0, class: "hatch" }, hatchG);
+  }
+  // 작은 동은 글자를 줄이고, 아주 작은 동(내접원 반지름 10 미만)은 이름을 숨겨 겹침을 막음 — 툴팁·표로 확인
+  const tier = g.r >= 30 ? "" : g.r >= 17 ? " sm" : g.r >= 10 ? " xs" : " xs hide";
+  const t = el("text", { class: "lbl" + tier, x: g.lx, y: g.ly }, lblG);
+  const n = el("tspan", { class: "n", x: g.lx, dy: hasData.has(k) && g.r >= 17 ? "-0.15em" : "0.35em" }, t);
+  n.textContent = LBL_SHORT(g.name);
+  const v = el("tspan", { class: "val", x: g.lx, dy: "1.2em" }, t);
+  labels[k] = { t, v };
+});
+// district names placed at the outer edge of each gu
+const GU_LABEL_POS = [];
+GU_LABEL_POS.forEach(p => el("text", { class: "gu-name", x: p.x, y: p.y }, svg).textContent = p.gu);
+
+/* ---------- compute ---------- */
+function compute() {
+  const refundRate = Number(refundEl.value) / 100, cap = Number(capEl.value), clean = cleanEl.checked;
+  return DONG.map(d => {
+    const area = clean ? d.area : d.rawArea, hh = clean ? d.hh : d.rawHh;
+    const volume = area * RAIN_M * RUNOFF * capture(), base = volume * PRICE, pool = base * refundRate;
+    const raw = hh > 0 ? pool / hh : 0, perHH = Math.min(raw, cap), paid = perHH * hh;
+    return { ...d, k: key(d.gu, d.name), fac: FAC[key(d.gu, d.name)], areaUsed: area, hhUsed: hh, volume, base, pool, raw, perHH, paid,
+             surplus: pool - paid, capped: raw >= cap, small: hh < SMALL_HH,
+             adjusted: d.area !== d.rawArea || d.hh !== d.rawHh };
+  });
+}
+
+function percentile(sortedArr, p) {
+  if (!sortedArr.length) return 0;
+  const idx = (p / 100) * (sortedArr.length - 1);
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  if (lo === hi) return sortedArr[lo];
+  return sortedArr[lo] + (sortedArr[hi] - sortedArr[lo]) * (idx - lo);
+}
+
+function updateCapHint() {
+  const refundRate = Number(refundEl.value) / 100;
+  const clean = cleanEl.checked;
+  const ratios = DONG
+    .map(d => {
+      const area = clean ? d.area : d.rawArea, hh = clean ? d.hh : d.rawHh;
+      return { hh, ratio: hh > 0 ? (area * RAIN_M * RUNOFF * capture() * PRICE) / hh : 0 };
+    })
+    .filter(d => d.hh >= SMALL_HH)
+    .map(d => d.ratio)
+    .sort((a, b) => a - b);
+  const p75 = percentile(ratios, 75) * refundRate;
+  $("hintRate").textContent = refundEl.value;
+  $("hintP75").textContent = fmt(p75);
+  $("hintN").textContent = ratios.length;
+  return p75;
+}
+
+$("applyP75").addEventListener("click", () => {
+  const p75 = updateCapHint();
+  const min = Number(capEl.min), max = Number(capEl.max), step = Number(capEl.step);
+  capEl.value = Math.min(max, Math.max(min, Math.round(p75 / step) * step));
+  render();
+});
+
+function render() {
+  const cap = Number(capEl.value);
+  updateCapHint();
+  $("refundLabel").textContent = refundEl.value + "%";
+  $("capLabel").textContent = fmt(cap) + "원";
+  $("captureLabel").textContent = $("capture").value + "%";
+  rows = compute();
+  if (!selected) selected = [...rows].sort((a,b) => b.perHH - a.perHH)[0].k;
+
+  const scope = guFilter === "all" ? rows : rows.filter(r => r.gu === guFilter);
+  const sum = (list, f) => list.reduce((s, r) => s + r[f], 0);
+  $("statVolume").textContent = fmt(sum(scope, "volume")) + " ㎥";
+  $("statBase").textContent = short(sum(scope, "base")) + " 원";
+  $("statPaid").textContent = short(sum(scope, "paid")) + " 원";
+  $("statSurplus").textContent = short(sum(scope, "surplus")) + " 원";
+
+  $("guRow").innerHTML = GUS.map(gu => {
+    const l = rows.filter(r => r.gu === gu), hh = sum(l, "hhUsed");
+    return `<div class="gucell${guFilter === gu ? " on" : ""}" data-gu="${gu}"><h3>${gu}</h3>
+      <div class="line">세대수 <b>${fmt(hh)}</b></div>
+      <div class="line">평균 세대당 지급액 <b>${fmt(sum(l, "paid") / hh)}원</b></div>
+      <div class="line">상한 도달 동 <b>${l.filter(r => r.capped).length} / ${l.length}</b></div></div>`;
+  }).join("");
+
+  // color scale shared across all eight districts so they can be compared
+  const vals = rows.map(r => r[metric]);
+  const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const maxDev = Math.max(...vals.map(v => Math.abs(v - mean)), 1);
+  $("legLo").textContent = "평균 " + short(maxDev) + "↓";
+  $("legHi").textContent = "평균 " + short(maxDev) + "↑";
+  $("legAvg").textContent = short(mean) + "원";
+  $("capkey").style.display = metric === "perHH" && rows.some(r => r.capped) ? "inline-flex" : "none";
+  const isFac = metric === "fac";
+  $("facLegend").hidden = !isFac; $("payLegend").hidden = isFac;
+  if (isFac) paintFacLegend();
+
+  rows.forEach(r => {
+    r.avgDev = r[metric] - mean;
+    r.avgPct = mean !== 0 ? (r.avgDev / mean) * 100 : 0;
+    const c = isFac ? facColor(r.fac) : color(r.avgDev / maxDev); r.color = c.fill;
+    const p = shapes[r.k];
+    p.style.fill = c.fill;
+    p.setAttribute("aria-label", `${r.gu} ${r.name} ${METRIC_LABEL[metric]} ${valTxt(r)}`);
+    hatches[r.k].setAttribute("opacity", metric === "perHH" && r.capped ? 1 : 0);
+    labels[r.k].t.style.fill = c.text;
+    labels[r.k].v.textContent = isFac ? r.fac + "곳" : short(r[metric]);
+  });
+  Object.entries(shapes).forEach(([k, p]) => {
+    const dim = guFilter !== "all" && p.dataset.gu !== guFilter;
+    p.classList.toggle("dim", dim); labels[k].t.classList.toggle("dim", dim);
+    if (hatches[k]) hatches[k].classList.toggle("dim", dim);
+  });
+
+  const sorted = [...scope].sort((a, b) => b[metric] - a[metric]);
+  $("tbody").innerHTML = sorted.map(r => `
+    <tr data-k="${r.k}" class="${r.k === selected ? "sel" : ""}">
+      <td class="gu">${r.gu}</td>
+      <td><span class="sw" style="background:${r.color}"></span>${r.name}${r.small ? '<span class="tag small">표본 적음</span>' : ""}</td>
+      <td>${fmt(r.hhUsed)}</td>
+      <td>${r.fac}곳</td>
+      <td>${fmt(r.perHH)}원${r.capped ? '<span class="tag cap">상한</span>' : ""}</td>
+      <td>${fmt(r.paid)}원</td>
+      <td>${fmt(r.surplus)}원</td>
+      <td style="color:${r.avgDev >= 0 ? 'var(--warn)' : 'var(--accent)'}">${r.avgDev >= 0 ? "+" : ""}${r.avgPct.toFixed(0)}%</td>
+    </tr>`).join("");
+
+  renderDetail();
+  renderBudget();
+}
+
+function renderDetail() {
+  const r = rows.find(x => x.k === selected);
+  if (tab === "status") {
+    Object.values(shapes).forEach(p => p.classList.remove("sel"));
+    selRing.setAttribute("d", geoByKey[selected].d);
+    renderFacDetail(r); return;
+  }
+  const all = [...rows].sort((a, b) => b[metric] - a[metric]);
+  const inGu = all.filter(x => x.gu === r.gu);
+  Object.values(shapes).forEach(p => p.classList.remove("sel"));
+  selRing.setAttribute("d", geoByKey[selected].d);
+  const share = r.pool > 0 ? r.surplus / r.pool * 100 : 0;
+  let note = r.capped
+    ? `세대당 몫이 <b>${fmt(r.raw)}원</b>으로 상한을 넘어, 환급포인트의 <b>${share.toFixed(0)}%</b>가 관리비로 귀속됩니다.`
+    : `세대당 몫 <b>${fmt(r.raw)}원</b>이 상한 아래라 환급포인트 전액이 세대에 지급됩니다.`;
+  let extra = "";
+  if (r.small) extra += `<div class="note warn">세대수가 ${fmt(r.hhUsed)}세대뿐이라 건물 한두 동에 따라 금액이 크게 달라집니다.</div>`;
+  if (r.adjusted && cleanEl.checked) extra += `<div class="note">이상치 보정으로 건축면적을 ${fmt(r.rawArea)}㎡에서 ${fmt(r.area)}㎡로 조정했습니다.</div>`;
+  $("detail").innerHTML = `
+    <div>
+      <div class="gu">${r.gu}</div>
+      <div class="dn">${r.name}</div>
+      <div class="rank">${METRIC_LABEL[metric]} 8개 구 ${all.length}개 동 중 ${all.indexOf(r) + 1}위 · ${r.gu} ${inGu.indexOf(r) + 1}위</div>
+    </div>
+    <dl>
+      <div><dt>세대수</dt><dd>${fmt(r.hhUsed)}세대</dd></div>
+      <div><dt>빗물이용시설(2022.4)</dt><dd>${r.fac}곳</dd></div>
+      <div><dt>건축면적</dt><dd>${fmt(r.areaUsed)}㎡</dd></div>
+      <div><dt>연간 확보 빗물량</dt><dd>${fmt(r.volume)}㎥</dd></div>
+      <div><dt>세대당 지급액</dt><dd>${fmt(r.perHH)}원</dd></div>
+      <div><dt>개인지급 총액</dt><dd>${fmt(r.paid)}원</dd></div>
+      <div><dt>관리비 귀속</dt><dd>${fmt(r.surplus)}원</dd></div>
+      <div><dt>8개 구 평균 대비</dt><dd style="color:${r.avgDev >= 0 ? 'var(--warn)' : 'var(--accent)'}">${r.avgDev >= 0 ? "+" : ""}${r.avgPct.toFixed(0)}%</dd></div>
+    </dl>
+    <div class="note">${note}</div>${extra}
+    <div id="aiBlock" class="ai"></div>`;
+  mountInsight(r);
+}
+
+function select(k) { if (selected !== k) { selected = k; render(); } }
+
+function showTipText(html, e) {
+  const box = mapzone.getBoundingClientRect();
+  tip.innerHTML = html;
+  tip.style.left = (e.clientX - box.left) + "px";
+  tip.style.top = (e.clientY - box.top) + "px";
+  tip.style.opacity = e.pointerType === "touch" ? 0 : 1;
+}
+function showTip(k, e) {
+  const r = rows.find(x => x.k === k);
+  showTipText(`<b>${r.gu} ${r.name}</b> · ${METRIC_LABEL[metric]} ${valTxt(r)}`, e);
+}
+function hideTip() { tip.style.opacity = 0; }
+
+function wireSeg(id, attr, set) {
+  const btns = document.querySelectorAll(`#${id} button`);
+  btns.forEach(b => b.addEventListener("click", () => {
+    set(b.dataset[attr]);
+    btns.forEach(x => x.setAttribute("aria-pressed", x === b));
+    render();
+  }));
+}
+wireSeg("metricSeg", "metric", v => metric = v);
+wireSeg("guSeg", "gu", v => {
+  guFilter = v;
+  if (v !== "all" && !selected.startsWith(v)) {
+    selected = compute().filter(r => r.gu === v).sort((a, b) => b.perHH - a.perHH)[0].k;
+  }
+});
+$("guRow").addEventListener("click", e => {
+  const c = e.target.closest(".gucell"); if (!c) return;
+  const b = document.querySelector(`#guSeg button[data-gu="${guFilter === c.dataset.gu ? "all" : c.dataset.gu}"]`);
+  if (b) b.click();
+});
+$("tbody").addEventListener("click", e => { const tr = e.target.closest("tr"); if (tr) select(tr.dataset.k); });
+[refundEl, capEl, $("capture")].forEach(x => x.addEventListener("input", render));
+cleanEl.addEventListener("change", render);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { paintRamp(); render(); });
+new MutationObserver(() => { paintRamp(); render(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+/* ---------- 동 이름 검색 ---------- */
+const searchLabelToKey = {};
+$("dongList").innerHTML = DONG.map(d => {
+  const label = `${d.gu} ${d.name}`;
+  searchLabelToKey[label] = key(d.gu, d.name);
+  return `<option value="${label}"></option>`;
+}).join("");
+const searchEl = $("dongSearch");
+function trySearch() {
+  const k = searchLabelToKey[searchEl.value.trim()];
+  if (!k) return;
+  if (guFilter !== "all" && !k.startsWith(guFilter)) {
+    guFilter = "all";
+    document.querySelectorAll("#guSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.gu === "all"));
+  }
+  select(k);
+  searchEl.value = ""; searchEl.blur();
+}
+searchEl.addEventListener("change", trySearch);
+searchEl.addEventListener("keydown", e => { if (e.key === "Enter") trySearch(); });
+
+/* ---------- 지도 이미지 저장 (downloads capability) ---------- */
+function svgToPngBlob(svgEl, scale) {
+  return new Promise((resolve, reject) => {
+    const clone = svgEl.cloneNode(true);
+    const cs = getComputedStyle(document.documentElement);
+    const val = name => cs.getPropertyValue(name).trim();
+    const style = document.createElementNS(NS, "style");
+    style.textContent = `
+      .ctx path { fill:${val("--ctx-fill")}; stroke:${val("--ctx-line")}; stroke-width:1.2; }
+      .ctx text { fill:${val("--faint")}; font-size:18px; font-weight:500; text-anchor:middle; }
+      .dong { stroke:${val("--card")}; stroke-width:1.8; }
+      .dong.nodata { fill:${val("--nodata")}; }
+      .gu-outline { fill:none; stroke:${val("--gu-line")}; stroke-width:2.4; opacity:.85; }
+      .gu-name { fill:${val("--ink")}; font-size:26px; font-weight:700; text-anchor:middle; opacity:.55; letter-spacing:2px; }
+      .lbl { text-anchor:middle; font-weight:600; }
+      .lbl .n { font-size:16px; } .lbl .val { font-size:14px; font-weight:500; }
+      .lbl.sm .n { font-size:12px; } .lbl.sm .val { font-size:10.5px; } .lbl.xs .n { font-size:9.5px; } .lbl.xs .val { display:none; } .lbl.hide { display:none; }
+      .sel-ring { fill:none; stroke:${val("--ink")}; stroke-width:4.5; }
+      text { font-family:'IBM Plex Sans KR', sans-serif; }
+    `;
+    clone.insertBefore(style, clone.firstChild);
+    clone.setAttribute("style", `background:${val("--water")}`);
+    const xml = new XMLSerializer().serializeToString(clone);
+    const svg64 = btoa(unescape(encodeURIComponent(xml)));
+    const img = new Image();
+    img.onload = () => {
+      const vb = svgEl.viewBox.baseVal;
+      const canvas = document.createElement("canvas");
+      canvas.width = vb.width * scale; canvas.height = vb.height * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = val("--water"); ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("toBlob failed")), "image/png");
+    };
+    img.onerror = reject;
+    img.src = "data:image/svg+xml;base64," + svg64;
+  });
+}
+$("mapImgBtn").addEventListener("click", async () => {
+  if (!downloadsCap) return;
+  const btn = $("mapImgBtn"), orig = btn.textContent;
+  btn.disabled = true; btn.textContent = "저장 중…";
+  try {
+    const blob = await svgToPngBlob($("map"), 2);
+    await downloadsCap.save({ filename: `rainpoint_map_${guFilter === "all" ? "전체" : guFilter}.png`, data: blob });
+  } catch (err) { /* 사용자가 저장을 취소했거나 사용 불가 */ }
+  finally { btn.disabled = false; btn.textContent = orig; }
+});
+
+/* ---------- 정책 AI 인사이트: 동 선택·조건 변경 때마다 자동 생성 (sample capability) ---------- */
+const AI_DEBOUNCE_MS = 650;       // 슬라이더를 끌 때마다 호출하지 않도록 멈춘 뒤에 생성
+const AI_RATE_PAUSE_MS = 15000;   // 요청 한도에 걸리면 이 시간 동안은 자동 생성을 쉼
+const AI_LABELS = ["진단", "시사점", "정책 제안"];
+const ai = { key: "", status: "checking", text: "", fallback: "", errCode: "", timer: null, ctrl: null, seq: 0, cache: new Map(), pauseUntil: 0 };
+
+/* 이 동의 조건 변경 시나리오를 페이지에서 직접 계산해 LLM에 넘긴다(LLM이 숫자를 만들지 않도록). */
+function scen(r, rate, cap) {
+  const pool = r.base * rate, raw = r.hhUsed > 0 ? pool / r.hhUsed : 0, per = Math.min(raw, cap);
+  return { raw, per, paid: per * r.hhUsed, sur: pool - per * r.hhUsed };
+}
+function insightFacts(r) {
+  const cap = Number(capEl.value), rate = Number(refundEl.value) / 100;
+  const p75 = updateCapHint();
+  const all = [...rows].sort((a, b) => b[metric] - a[metric]);
+  const inGu = all.filter(x => x.gu === r.gu), guRows = rows.filter(x => x.gu === r.gu);
+  const totHH = rows.reduce((s, x) => s + x.hhUsed, 0), totPaid = rows.reduce((s, x) => s + x.paid, 0), totSur = rows.reduce((s, x) => s + x.surplus, 0);
+  const surRank = [...rows].sort((a, b) => b.surplus - a.surplus).indexOf(r) + 1;
+  const guHH = guRows.reduce((s, x) => s + x.hhUsed, 0), guPaid = guRows.reduce((s, x) => s + x.paid, 0);
+  const sc = [];
+  const down = Math.max(10, Math.round(rate * 100) - 10), up = Math.min(100, Math.round(rate * 100) + 10);
+  if (down !== Math.round(rate * 100)) { const s = scen(r, down / 100, cap); sc.push({ label: `환급률 ${down}%로 낮추면`, ...s }); }
+  if (up !== Math.round(rate * 100)) { const s = scen(r, up / 100, cap); sc.push({ label: `환급률 ${up}%로 높이면`, ...s }); }
+  if (Math.abs(p75 - cap) >= 50) { const s = scen(r, rate, p75); sc.push({ label: `상한을 데이터 근거 상한 ${fmt(p75)}원(세대수 100 이상 동 분포의 3사분위수)으로 바꾸면`, ...s }); }
+  const rc = r.base > 0 ? cap * r.hhUsed / r.base * 100 : Infinity;
+  return { cap, rate, p75, all, inGu, guRows, totHH, totPaid, totSur, surRank, guHH, guPaid, sc, rc,
+           capped: rows.filter(x => x.capped).length, guCapped: guRows.filter(x => x.capped).length,
+           share: r.pool > 0 ? r.surplus / r.pool * 100 : 0, surShare: totSur > 0 ? r.surplus / totSur * 100 : 0 };
+}
+
+function insightPrompt(r) {
+  const f = insightFacts(r);
+  const flags = [];
+  if (r.small) flags.push(`세대수가 ${fmt(r.hhUsed)}세대뿐인 표본 적은 동`);
+  if (r.adjusted && cleanEl.checked) flags.push(`건축면적을 ${fmt(r.rawArea)}㎡에서 ${fmt(r.area)}㎡로 이상치 보정한 동`);
+  const scLines = f.sc.map(s => `- ${s.label}: 세대당 몫 ${fmt(s.raw)}원, 세대당 지급액 ${fmt(s.per)}원, 개인지급 총액 ${fmt(s.paid)}원, 관리비 귀속액 ${fmt(s.sur)}원`);
+  scLines.push(`- 상한을 없애면: 세대당 지급액이 세대당 몫 ${fmt(r.raw)}원 그대로 지급되고 관리비 귀속액은 0원`);
+  scLines.push(f.rc <= 100 ? `- 이 동이 상한 ${fmt(f.cap)}원에 닿기 시작하는 환급률: 약 ${Math.ceil(f.rc)}%` : `- 환급률 100%로도 이 동은 상한 ${fmt(f.cap)}원에 닿지 않음`);
+  return `너는 서울시 상하수도 정책을 다루는 정책 분석가야. 아래는 'ESG 빗물 크레딧' 시뮬레이션에서 한 법정동의 결과와, 조건을 바꿨을 때 페이지에서 다시 계산한 값이야. 이것을 바탕으로 지자체 담당자가 바로 쓸 수 있는 정책 인사이트 브리프를 써줘.
+
+[전제]
+- 모든 금액은 건축면적 × 서울 연강수량 평년값 × 유출계수로 계산한 잠재량 기준 시뮬레이션이야. 실제 빗물 저류·사용 실적이나 주민 참여 데이터가 아니야.
+- 그래서 '참여율이 높다', '성과가 우수하다', '잘 운영되고 있다'처럼 실제 참여나 성과를 평가하는 표현은 쓰지 마.
+- 아래에 없는 사실(지역 특성, 건축 밀도, 인구 등)은 추측하지 마. 정책 제안의 숫자는 '조건 변경 시나리오'에 적힌 값만 그대로 인용하고, 새로 계산하거나 지어내지 마.
+- 관리비 귀속액은 상한을 넘어 세대에 지급하지 않고 단지 관리비로 돌리는 금액이야.
+
+[현재 정책 조건]
+- 환급률 ${Math.round(f.rate * 100)}%, 세대당 연간 지급 상한 ${fmt(f.cap)}원 (현재 환급률에서 세대수 100 이상 동 분포의 3사분위수는 ${fmt(f.p75)}원)
+- 포집률 ${$("capture").value}%(지붕 빗물 중 저류조로 모으는 비율), 이상치 보정 ${cleanEl.checked ? "적용" : "미적용(원자료 그대로)"}, 지도 지표: ${METRIC_LABEL[metric]}
+
+[이 동: ${r.gu} ${r.name}]
+- 서울시 공개 빗물이용시설 ${r.fac}곳(2022.4 기준, 학교·공공건물 포함, 용량 정보 없음)\n- 세대수 ${fmt(r.hhUsed)}세대, 건축면적 ${fmt(r.areaUsed)}㎡, 연간 확보 빗물량(잠재량) ${fmt(r.volume)}㎥, 기준산정액 ${fmt(r.base)}원
+- 상한 적용 전 세대당 몫 ${fmt(r.raw)}원 → 세대당 지급액 ${fmt(r.perHH)}원 (상한 ${r.capped ? "도달" : "도달 안 함"})
+- 개인지급 총액 ${fmt(r.paid)}원, 관리비 귀속액 ${fmt(r.surplus)}원 (환급포인트의 ${f.share.toFixed(0)}%)
+- ${METRIC_LABEL[metric]} 기준 8개 구 ${f.all.length}개 동 중 ${f.all.indexOf(r) + 1}위, ${r.gu} 안에서 ${f.inGu.indexOf(r) + 1}위, 8개 구 평균 대비 ${r.avgDev >= 0 ? "+" : ""}${r.avgPct.toFixed(0)}%
+- 관리비 귀속액은 8개 구 전체 귀속 총액(${fmt(f.totSur)}원)의 ${f.surShare.toFixed(1)}%, 82개 동 중 ${f.surRank}위${flags.length ? "\n- 참고: " + flags.join(", ") : ""}
+
+[비교]
+- ${r.gu} 세대당 평균 지급액 ${fmt(f.guPaid / f.guHH)}원, 8개 구 세대당 평균 지급액 ${fmt(f.totPaid / f.totHH)}원
+- 상한 도달 동: ${r.gu} ${f.guCapped}곳 / ${f.guRows.length}곳, 8개 구 ${f.capped}곳 / ${rows.length}곳
+
+[조건 변경 시나리오(이 동만, 다른 조건은 그대로)]
+${scLines.join("\n")}
+
+[출력 형식]
+정확히 3줄로, 줄마다 아래 라벨로 시작하고 줄바꿈으로만 구분해. 마크다운, 목록, 이모지는 쓰지 마. 존댓말로, 전체 400자 안팎.
+진단: (1~2문장) 이 동이 지금 조건에서 어디에 있는지. 상한 도달 여부, 세대당 지급액, 관리비 귀속액과 8개 구 안에서의 위치(순위·비중).
+시사점: (1~2문장) 이 수치가 제도 설계에 의미하는 바. 상한과 환급률 중 무엇이 이 동의 결과를 좌우하는지, 형평성(동 간 세대당 격차)과 재원 관점에서.
+정책 제안: (1~2문장) 시나리오의 숫자를 인용한 구체적 조정안과, 확정 전에 검증해야 할 점 한 가지(예: 저류조 수위 센서 실측 정산). 시설이 0곳이면 설치가 먼저라는 점을, 시설이 있으면 기존 시설 연계 시범 가능성을 반영해.`;
+}
+
+/* AI 연결이 없거나 실패했을 때 보여 주는 수치 기반 3줄 요약(LLM 아님) */
+function insightFallback(r) {
+  const f = insightFacts(r);
+  const d1 = r.capped
+    ? `${r.gu} ${r.name}은 세대당 몫 ${fmt(r.raw)}원이 상한 ${fmt(f.cap)}원을 넘어 ${fmt(f.cap)}원만 지급되고, 환급포인트의 ${f.share.toFixed(0)}%(${short(r.surplus)}원)가 관리비로 귀속됩니다. 이는 8개 구 귀속 총액의 ${f.surShare.toFixed(1)}%로 82개 동 중 ${f.surRank}위입니다.`
+    : `${r.gu} ${r.name}은 세대당 몫 ${fmt(r.raw)}원이 상한 ${fmt(f.cap)}원보다 낮아 환급포인트 전액이 세대에 지급되고, 관리비로 귀속되는 금액은 없습니다.`;
+  const d2 = r.capped
+    ? `이 동의 결과는 환급률보다 상한이 좌우합니다. 상한이 없으면 세대당 ${fmt(r.raw)}원이 지급되어 8개 구 세대당 평균 ${fmt(f.totPaid / f.totHH)}원과 격차가 커집니다.`
+    : `이 동의 결과는 상한이 아니라 환급률이 좌우합니다. ${f.rc <= 100 ? `환급률이 약 ${Math.ceil(f.rc)}% 이상이 되어야 상한에 닿습니다.` : "환급률 100%로도 상한에 닿지 않습니다."}`;
+  const best = f.sc.find(s => s.label.startsWith("상한을")) || f.sc.find(s => s.label.includes("높이면")) || f.sc[0];
+  const d3 = (best ? `${best.label} 세대당 지급액 ${fmt(best.per)}원, 관리비 귀속액 ${fmt(best.sur)}원이 됩니다. ` : "") + "확정 전에 저류조 수위 센서 실측으로 정산 값을 검증해야 합니다.";
+  return `진단: ${d1}\n시사점: ${d2}\n정책 제안: ${d3}`;
+}
+
+function currentRow() { return rows.find(x => x.k === selected); }
+
+/* 라벨이 붙은 줄은 라벨 + 문장으로, 그 밖의 텍스트는 그대로 그린다 (textContent만 사용) */
+function renderBrief(box, text) {
+  box.textContent = "";
+  const lines = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  const labelRe = new RegExp("^(" + AI_LABELS.join("|") + ")\\s*[:：]\\s*(.*)$");
+  let labelled = 0;
+  lines.forEach(line => {
+    const m = line.match(labelRe);
+    const row = document.createElement("div");
+    if (m) {
+      labelled++;
+      row.className = "ai-row";
+      const l = document.createElement("span"); l.className = "ai-lab"; l.textContent = m[1];
+      const t = document.createElement("span"); t.className = "ai-txt"; t.textContent = m[2];
+      row.append(l, t);
+    } else { row.className = "ai-plain"; row.textContent = line; }
+    box.appendChild(row);
+  });
+  if (!lines.length) box.textContent = text;
+}
+
+/* renderDetail이 상세 패널을 다시 그릴 때마다 호출. 프롬프트(동·조건)가 바뀐 경우에만 새로 생성한다. */
+function mountInsight(r) {
+  const block = $("aiBlock"); if (!block) return;
+  block.innerHTML = `<div class="ai-h"><span class="ai-t">정책 인사이트</span><span class="ai-badge" id="aiBadge"></span>
+      <button type="button" class="ai-btn" id="aiRegen" hidden>다시 생성</button></div>
+    <div class="ai-body" id="aiBody"></div><div class="ai-foot" id="aiFoot"></div>`;
+  const prompt = insightPrompt(r);
+  if (prompt !== ai.key) { ai.key = prompt; startInsight(r, prompt, false); }
+  paintInsight();
+}
+
+function startInsight(r, prompt, force) {
+  clearTimeout(ai.timer);
+  if (ai.ctrl) { ai.ctrl.abort(); ai.ctrl = null; }
+  const seq = ++ai.seq;
+  ai.errCode = ""; ai.fallback = insightFallback(r);
+  if (!capsChecked) { ai.status = "checking"; ai.text = ""; return; }
+  if (!sampleCap) { ai.status = "offline"; ai.text = ai.fallback; return; }
+  if (!force && ai.cache.has(prompt)) { ai.status = "done"; ai.text = ai.cache.get(prompt); return; }
+  if (!force && Date.now() < ai.pauseUntil) { ai.status = "error"; ai.errCode = "rate_limited"; ai.text = ai.fallback; return; }
+  ai.status = "loading"; ai.text = "";
+  ai.timer = setTimeout(() => generateInsight(prompt, seq, force), force ? 0 : AI_DEBOUNCE_MS);
+}
+
+async function generateInsight(prompt, seq, force) {
+  const ctrl = new AbortController(); ai.ctrl = ctrl;
+  try {
+    const res = await sampleCap(prompt, {
+      modelTier: "default", signal: ctrl.signal, cache: !force,
+      onText: ({ text }) => { if (seq !== ai.seq) return; ai.text = text; ai.status = "streaming"; paintInsight(); },
+    });
+    if (seq !== ai.seq) return;
+    const text = (res && res.text || "").trim();
+    if (!text) throw { code: "empty" };
+    ai.cache.set(prompt, text); ai.text = text; ai.status = "done";
+  } catch (err) {
+    if (seq !== ai.seq || (err && err.name === "AbortError")) return;
+    ai.status = "error"; ai.errCode = (err && err.code) || "unknown"; ai.text = ai.fallback;
+    if (ai.errCode === "rate_limited") ai.pauseUntil = Date.now() + AI_RATE_PAUSE_MS;
+  } finally {
+    if (seq === ai.seq) { ai.ctrl = null; paintInsight(); }
+  }
+}
+
+function paintInsight() {
+  const badge = $("aiBadge"), body = $("aiBody"), foot = $("aiFoot"), btn = $("aiRegen");
+  if (!badge) return;
+  const busy = ai.status === "loading" || ai.status === "streaming" || ai.status === "checking";
+  const setBadge = (t, cls) => { badge.textContent = t; badge.className = "ai-badge" + (cls ? " " + cls : ""); };
+  const plain = t => { body.className = "ai-body wait"; body.textContent = t; };
+  const brief = t => { body.className = "ai-body"; renderBrief(body, t); };
+  const AUTO = "조건을 바꾸거나 다른 동을 고르면 자동으로 다시 생성됩니다.";
+  if (ai.status === "checking") { setBadge("연결 확인 중", "busy"); plain("AI 연결을 확인하고 있습니다…"); foot.textContent = ""; }
+  else if (ai.status === "loading") { setBadge("생성 중", "busy live"); plain("이 동의 수치와 조건 변경 시나리오를 읽고 있습니다…"); foot.textContent = AUTO; }
+  else if (ai.status === "streaming") { setBadge("생성 중", "busy live"); brief(ai.text); foot.textContent = AUTO; }
+  else if (ai.status === "done") { setBadge("Claude 생성", "live"); brief(ai.text); foot.textContent = "건축면적 기반 잠재량 시뮬레이션에 대한 해석입니다. " + AUTO; }
+  else if (ai.status === "offline") {
+    setBadge("규칙 기반 요약"); brief(ai.text);
+    foot.textContent = "동과 조건이 바뀔 때마다 수치로 다시 만든 요약입니다. AI 서버를 연결하면 이 자리에 AI가 쓴 브리프가 나옵니다.";
+  } else {
+    setBadge("규칙 기반 요약"); brief(ai.text);
+    foot.textContent = ai.errCode === "not_granted" ? "AI 사용이 허용되지 않아 수치로 만든 요약을 보여 드립니다. 페이지의 권한 메뉴에서 허용한 뒤 '다시 생성'을 눌러 주세요."
+      : ai.errCode === "rate_limited" ? "요청이 많아 잠시 쉬고 있습니다. 잠시 뒤 '다시 생성'을 눌러 주세요."
+      : "AI 응답을 받지 못해 수치로 만든 요약을 보여 드립니다. '다시 생성'을 눌러 주세요.";
+  }
+  btn.hidden = !sampleCap || busy;
+}
+
+$("detail").addEventListener("click", e => {
+  if (e.target.id !== "aiRegen") return;
+  const r = currentRow(); if (!r) return;
+  ai.pauseUntil = 0; ai.cache.delete(ai.key);
+  startInsight(r, ai.key, true); paintInsight();
+});
+
+/* capability 연결 여부가 정해진 직후 현재 동의 인사이트를 시작 */
+function onCapsReady() {
+  const r = currentRow(); if (!r || !ai.key) return;
+  startInsight(r, ai.key, false); paintInsight();
+}
+
+/* ---------- CSV 다운로드 (downloads capability) ---------- */
+$("csvBtn").addEventListener("click", async () => {
+  if (!downloadsCap) return;
+  const scope = guFilter === "all" ? rows : rows.filter(r => r.gu === guFilter);
+  const header = ["구", "동", "세대수", "빗물이용시설(곳)", "세대당지급액(원)", "개인지급총액(원)", "관리비귀속(원)", "평균대비(%)"];
+  const lines = [header.join(",")].concat(
+    scope.map(r => [r.gu, r.name, r.hhUsed, r.fac, Math.round(r.perHH), Math.round(r.paid), Math.round(r.surplus), r.avgPct.toFixed(1)].join(","))
+  );
+  const csv = "\uFEFF" + lines.join("\n");
+  try { await downloadsCap.save({ filename: "rainpoint_dong.csv", data: csv }); }
+  catch (err) { /* 사용자가 저장을 취소했거나 사용 불가 */ }
+});
+
+/* ---------- 독립 사이트용 초기화 ----------
+   downloads: 브라우저 기본 다운로드로 CSV·지도 이미지 저장
+   sample: window.RP_CONFIG.aiEndpoint 가 있으면 그 서버로 AI 요청({prompt} → {text}), 없으면 규칙 기반 요약 */
+(function initStandalone() {
+  downloadsCap = {
+    save: async ({ filename, data }) => {
+      const blob = data instanceof Blob ? data : new Blob([data], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob), a = document.createElement("a");
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+  };
+  const ep = window.RP_CONFIG && window.RP_CONFIG.aiEndpoint;
+  if (ep) {
+    sampleCap = async (prompt, opts = {}) => {
+      const res = await fetch(ep, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }), signal: opts.signal });
+      if (res.status === 429) throw { code: "rate_limited" };
+      if (!res.ok) throw { code: "server_error" };
+      const j = await res.json();
+      if (opts.onText) opts.onText({ text: j.text || "" });
+      return { text: j.text || "" };
+    };
+  }
+  $("csvBtn").style.display = "inline-flex";
+  $("mapImgBtn").style.display = "inline-block";
+  capsChecked = true;
+  setTimeout(onCapsReady, 0);
+})();
+
+
+/* =====================================================================
+   통합 데모: ① 현황 ② 보상 설계 ③ 참여 검증 ④ 운영 추천
+   ===================================================================== */
+const TABS = ["status", "reward", "verify", "operate"];
+const MAP_TABS = new Set(["status", "reward"]);
+const AREA_PER_HH = DONG.reduce((s, d) => s + d.area, 0) / DONG.reduce((s, d) => s + d.hh, 0); // 8개 구 공동주택 세대당 건축면적(보정값)
+const TANK_RATIO = 0.05;   // 시행규칙 제4조: 지붕 집수면적 × 0.05m 이상
+const site = { hh: 1000 };
+const siteArea = () => site.hh * AREA_PER_HH;
+const siteTank = () => siteArea() * TANK_RATIO;
+const won = n => fmt(n) + "원";
+const SVGNS = "http://www.w3.org/2000/svg";
+function svgEl(tag, attrs = {}, parent) {
+  const n = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function txt(parent, x, y, s, cls, anchor) {
+  const t = svgEl("text", { x, y, class: cls || "ax", "text-anchor": anchor || "middle" }, parent);
+  t.textContent = s; return t;
+}
+
+/* ---------- 탭 ---------- */
+function setTab(t, push) {
+  if (!TABS.includes(t)) t = "status";
+  const prev = tab; tab = t;
+  document.querySelectorAll("[data-tabs]").forEach(s => { s.hidden = !s.dataset.tabs.split(" ").includes(t); });
+  document.querySelectorAll("#steps button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === t ? "step" : "false"));
+  $("guSeg").hidden = !MAP_TABS.has(t);
+  if (t === "status") { metric = "fac"; setPts(true); }
+  else if (t === "reward" && (metric === "fac" || prev !== "reward")) { metric = "perHH"; setPts(false); }
+  document.querySelectorAll("#metricSeg button").forEach(b => { b.setAttribute("aria-pressed", b.dataset.metric === metric); b.hidden = (t === "status") !== (b.dataset.metric === "fac"); });
+  $("mapTitle").textContent = t === "status" ? "빗물이용시설 분포" : "동별 보상 지도";
+  if (push && location.hash !== "#" + t) { try { history.replaceState(null, "", "#" + t); } catch (e) { location.hash = t; } }
+  if (MAP_TABS.has(t)) render();
+  if (t === "verify") runVerify();
+  if (t === "operate") { drawMonthly(); runOperate(); }
+}
+document.querySelectorAll("#steps button").forEach(b => b.addEventListener("click", () => { setTab(b.dataset.tab, true); window.scrollTo({ top: 0, behavior: "smooth" }); }));
+window.addEventListener("hashchange", () => { const t = location.hash.slice(1); if (t && t !== tab) setTab(t); });
+document.addEventListener("click", e => { const g = e.target.closest("[data-go]"); if (g) { setTab(g.dataset.go, true); window.scrollTo({ top: 0, behavior: "smooth" }); } });
+
+/* ---------- 시설 위치 점 ---------- */
+const ptG = svgEl("g", { class: "pts" }, svg);
+svg.insertBefore(ptG, lblG);
+PTS.forEach(p => svgEl("circle", { cx: p[0], cy: p[1], r: 5.2, class: "pt" }, ptG));
+function setPts(on) { $("ptToggle").checked = on; ptG.style.display = on ? "" : "none"; }
+$("ptToggle").addEventListener("change", e => setPts(e.target.checked));
+
+/* ---------- 구별 시설 수 막대 ---------- */
+(function guBars() {
+  const gc = {}; DONG.forEach(d => gc[d.gu] = (gc[d.gu] || 0) + FAC[key(d.gu, d.name)]);
+  const mx = Math.max(...Object.values(gc));
+  $("guBars").innerHTML = [...GUS].sort((a, b) => gc[b] - gc[a]).map(g =>
+    `<div class="bar"><span>${g}</span><div class="track"><div class="fill" style="width:${gc[g] / mx * 100}%"></div></div><b>${gc[g]}</b></div>`).join("");
+})();
+
+/* ---------- 시설 상세(현황 탭) ---------- */
+function renderFacDetail(r) {
+  const byBase = [...rows].sort((a, b) => b.base - a.base);
+  const rankBase = byBase.indexOf(r) + 1;
+  let note;
+  if (r.fac === 0) note = `<div class="note warn">공개 데이터상 시설이 없는 동입니다. 잠재량은 계산되지만, 참여하려면 시설 설치가 먼저 필요합니다.</div>`;
+  else if (r.fac <= 2 && rankBase <= 10) note = `<div class="note warn">잠재 기준산정액은 82개 동 중 <b>${rankBase}위</b>지만 시설은 <b>${r.fac}곳</b>뿐입니다. 실제 지급 규모는 시범 실측으로 확정해야 합니다.</div>`;
+  else note = `<div class="note">시설 <b>${r.fac}곳</b>이 있어 기존 시설 연계형 시범 후보가 될 수 있습니다.</div>`;
+  const facRank = [...rows].sort((a, b) => b.fac - a.fac).findIndex(x => x.fac === r.fac) + 1;
+  $("detail").innerHTML = `
+    <div><div class="gu">${r.gu}</div><div class="dn">${r.name}</div>
+      <div class="rank">시설 수 82개 동 중 ${facRank}위 · 잠재 기준산정액 ${rankBase}위</div></div>
+    <dl>
+      <div><dt>빗물이용시설(2022.4)</dt><dd>${r.fac}곳</dd></div>
+      <div><dt>공동주택 세대수</dt><dd>${fmt(r.hhUsed)}세대</dd></div>
+      <div><dt>건축면적</dt><dd>${fmt(r.areaUsed)}㎡</dd></div>
+      <div><dt>연간 확보 빗물량(잠재)</dt><dd>${fmt(r.volume)}㎥</dd></div>
+      <div><dt>잠재 기준산정액</dt><dd>${short(r.base)}원</dd></div>
+    </dl>
+    ${note}
+    <button type="button" class="linkbtn" data-go="reward">이 동의 보상 설계 보기 →</button>`;
+}
+
+/* ---------- 예산 맞춤 설계 ---------- */
+function budgetPlan() {
+  const B = Number($("budget").value) * 1e8;
+  const scope = guFilter === "all" ? rows : rows.filter(r => r.gu === guFilter);
+  const baseSum = scope.reduce((s, r) => s + r.base, 0);
+  const rawRate = baseSum > 0 ? B / baseSum : 0;
+  let rate = Math.floor(rawRate * 20 + 1e-9) / 20;      // 5% 단위로 내림
+  const short_ = rate < 0.1;
+  rate = Math.max(0.1, Math.min(1, rate));
+  const ratios = DONG.map(d => {
+    const area = cleanEl.checked ? d.area : d.rawArea, hh = cleanEl.checked ? d.hh : d.rawHh;
+    return { hh, v: hh > 0 ? area * RAIN_M * RUNOFF * capture() * PRICE / hh : 0 };
+  }).filter(d => d.hh >= SMALL_HH).map(d => d.v).sort((a, b) => a - b);
+  let cap = Math.round(percentile(ratios, 75) * rate / 1000) * 1000;
+  cap = Math.max(Number(capEl.min), Math.min(Number(capEl.max), cap));
+  let paid = 0, sur = 0, capped = 0;
+  scope.forEach(r => { const s = scen(r, rate, cap); paid += s.paid; sur += s.sur; if (s.raw >= cap) capped++; });
+  return { B, rate, cap, paid, sur, capped, n: scope.length, baseSum, short_, need10: baseSum * 0.1 };
+}
+function renderBudget() {
+  const p = budgetPlan();
+  $("budgetLabel").textContent = $("budget").value + "억 원";
+  const pilotHH = Math.max(1, Number($("pilotHH").value) || 0);
+  const scopeTxt = guFilter === "all" ? "8개 구 전체" : guFilter;
+  $("budgetOut").innerHTML = (p.short_ ? `<div class="note warn">${scopeTxt}는 환급률 10%에도 연 ${short(p.need10)}원이 필요합니다. 포집률을 낮추거나 범위를 한 구로 좁혀 보세요. 아래는 환급률 10% 기준입니다.</div>` : "") + `
+    <dl class="kvs">
+      <div><dt>제안 환급률</dt><dd>${Math.round(p.rate * 100)}%</dd></div>
+      <div><dt>제안 상한(3사분위수)</dt><dd>${won(p.cap)}</dd></div>
+      <div><dt>예상 지출(개인+관리비)</dt><dd>${short(p.paid + p.sur)}원</dd></div>
+      <div><dt>예산 대비</dt><dd>${(p.paid + p.sur) / p.B * 100 < 1000 ? ((p.paid + p.sur) / p.B * 100).toFixed(0) + "%" : "–"}</dd></div>
+      <div><dt>상한 도달 동</dt><dd>${p.capped} / ${p.n}곳</dd></div>
+      <div><dt>시범 단지 ${fmt(pilotHH)}세대 연 최대 지급</dt><dd>${short(pilotHH * p.cap)}원</dd></div>
+    </dl>`;
+  $("applyBudget").dataset.rate = Math.round(p.rate * 100); $("applyBudget").dataset.cap = p.cap;
+  const cand = rows.filter(r => r.fac > 0 && r.hhUsed >= SMALL_HH && (guFilter === "all" || r.gu === guFilter))
+    .sort((a, b) => b.fac - a.fac || b.hhUsed - a.hhUsed).slice(0, 5);
+  $("pilotList").innerHTML = cand.map(r => `<li data-k="${r.k}" tabindex="0"><span>${r.name} <i>${r.gu}</i></span><b>시설 ${r.fac}곳</b></li>`).join("");
+}
+$("budget").addEventListener("input", renderBudget);
+$("pilotHH").addEventListener("input", renderBudget);
+$("applyBudget").addEventListener("click", e => {
+  refundEl.value = e.currentTarget.dataset.rate; capEl.value = e.currentTarget.dataset.cap; render();
+});
+$("pilotList").addEventListener("click", e => { const li = e.target.closest("li"); if (li) select(li.dataset.k); });
+$("pilotList").addEventListener("keydown", e => { const li = e.target.closest("li"); if (li && e.key === "Enter") select(li.dataset.k); });
+
+/* ---------- 예시 단지 설정 (③·④ 공용) ---------- */
+function syncSite(from) {
+  const v = Math.max(100, Math.min(5000, Number(from.value) || 1000));
+  site.hh = v;
+  document.querySelectorAll(".siteHH").forEach(i => { if (i !== from) i.value = v; });
+  document.querySelectorAll(".siteInfo").forEach(s => s.textContent =
+    `집수면적 ${fmt(siteArea())}㎡ (세대당 ${AREA_PER_HH.toFixed(1)}㎡, 8개 구 평균) · 저류조 ${fmt(siteTank())}㎥ (집수면적 × 0.05m, 시행규칙 제4조 최소 기준)`);
+}
+document.querySelectorAll(".siteHH").forEach(i => i.addEventListener("change", () => { syncSite(i); if (tab === "verify") runVerify(); else { drawMonthly(); runOperate(); } }));
+syncSite(document.querySelector(".siteHH"));
+
+/* =====================================================================
+   ③ 참여 검증: 모의 수위 데이터로 이상 유입 자동 탐지
+   ===================================================================== */
+let vSeed = 7;
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+function mockSeason(seed, inject) {
+  const R = rng(seed), A = siteArea(), V = siteTank();
+  const days = [];
+  const months = [{ m: 5, n: 31, total: MONTH_RAIN[4] }, { m: 6, n: 30, total: MONTH_RAIN[5] }];
+  months.forEach(({ m, n, total }) => {
+    const raw = [];
+    for (let i = 0; i < n; i++) { const wet = R() < 0.3; raw.push(wet ? -Math.log(1 - R()) * (R() < 0.2 ? 3 : 1) : 0); }
+    const s = raw.reduce((a, b) => a + b, 0) || 1;
+    raw.forEach((x, i) => days.push({ m, d: i + 1, rain: Math.round(x / s * total * 10) / 10 }));
+  });
+  const eff = 0.66 + R() * 0.12;                                              // 이 단지의 실제 집수율(데이터로 추정할 값)
+  const want = days.map(x => x.rain >= 5 ? 0 : (18 + R() * 14) * site.hh / 1000); // 조경·청소 사용(㎥/일)
+  const noise = days.map(() => (R() - 0.5) * 0.008 * V);
+  const run = plan => {
+    let s = 0.4 * V, shown = s;
+    return days.map((x, i) => {
+      const p = plan[i];
+      const inflow = x.rain / 1000 * A * eff;
+      const extra = p && p.type === "tap" ? p.amt : p && p.type === "pipe" ? Math.max(x.rain / 1000 * A * 0.8, 0.12 * V) : 0;
+      let ns = s + inflow + extra;
+      const use = Math.min(want[i], ns); ns -= use;
+      const over = Math.max(0, ns - V); ns = Math.min(V, ns);
+      const reading = p && p.type === "stuck" ? shown : Math.max(0, Math.min(V, ns + noise[i]));
+      s = ns; shown = reading;
+      return { inflowTrue: inflow, extra, use, over, level: ns, reading, plan: p ? p.type : "" };
+    });
+  };
+  const plan = {};
+  if (inject) {
+    const lv = run({}).map(x => x.level / V);
+    const idx = f => days.map((x, i) => i).filter(f);
+    const far = i => Object.keys(plan).every(k => Math.abs(k - i) >= 6);
+    const pick = arr => { arr = arr.filter(far); return arr.length ? arr[Math.floor(R() * arr.length)] : null; };
+    const dry = idx(i => i > 4 && i < 58 && days[i].rain < 0.5 && lv[i] < 0.55);
+    const wet = idx(i => i > 4 && i < 58 && days[i].rain >= 4 && days[i].rain <= 25 && lv[i - 1] < 0.45);
+    let k = pick(dry); if (k != null) plan[k] = { type: "tap", amt: 0.12 * V + R() * 0.06 * V };
+    k = pick(wet); if (k != null) plan[k] = { type: "pipe" };
+    const win = idx(i => i > 4 && i < 57 && !plan[i] && !plan[i + 1] && !plan[i + 2] && days[i].rain >= 8 && days[i + 1].rain < 30 && lv[i - 1] < 0.75);
+    k = pick(win); if (k != null) { plan[k] = { type: "stuck" }; plan[k + 1] = { type: "stuck" }; }
+  }
+  run(plan).forEach((r, i) => Object.assign(days[i], r));
+  return { days, A, V, eff };
+}
+
+function detect(sim) {
+  const { days, A, V } = sim;
+  const tol = 0.02 * V;                                     // 센서 오차 허용
+  let prevReading = 0.4 * V, stalled = false;
+  days.forEach((x, i) => {
+    const est = Math.max(0, x.reading - prevReading + x.use);        // 측정 유입 = 수위 변화 + 사용량(유량계)
+    const maxIn = x.rain / 1000 * A + tol;                           // 지붕에 떨어진 비 전부 + 오차
+    const nearFull = x.reading >= 0.97 * V;
+    const expect = x.rain / 1000 * A * 0.5;                         // 보수적 최소 기대 유입(집수율 0.5)
+    let flag = "", why = "";
+    const prev = days[i - 1];
+    const flat = Math.abs(x.reading - prevReading) < 0.002 * V;
+    if (stalled && flat) { flag = "점검"; why = "센서 정지 지속 (값이 그대로)"; }
+    else if (stalled && est > maxIn) { flag = "보류"; why = "센서 복구 후 며칠치가 한꺼번에 반영 (수기 확인)"; }
+    else if (x.rain < 1 && est > tol) { flag = "보류"; why = "강수 없는 수위 상승 (외부 급수 의심)"; }
+    else if (est > maxIn) { flag = "보류"; why = "지붕 빗물 전량보다 많은 유입 (다른 배관 유입 의심)"; }
+    else if (x.rain >= 8 && !nearFull && flat) { flag = "점검"; why = "비가 왔는데 수위 변화 없음 (센서 정지 의심)"; }
+    stalled = flag === "점검";
+    Object.assign(x, { est, maxIn, flag, why, expect });
+    prevReading = x.reading;
+  });
+  const ok = days.filter(x => !x.flag && x.rain >= 3 && x.reading < 0.97 * V && x.est > 0);
+  const ratios = ok.map(x => x.est / (x.rain / 1000 * A)).sort((a, b) => a - b);
+  const effHat = ratios.length ? ratios[Math.floor(ratios.length / 2)] : NaN;
+  return { effHat, nOk: ratios.length };
+}
+
+function runVerify() {
+  const inject = $("injectToggle").checked;
+  const sim = mockSeason(vSeed, inject);
+  const st = detect(sim);
+  const { days, V } = sim;
+  const rate = Number(refundEl.value) / 100;
+  const flagged = days.filter(x => x.flag);
+  const held = flagged.reduce((s, x) => s + x.est, 0);
+  const accepted = days.filter(x => !x.flag).reduce((s, x) => s + x.est, 0);
+  const pool = accepted * PRICE * rate;
+  const overflow = days.reduce((s, x) => s + x.over, 0);
+  $("vStats").innerHTML = `
+    <div class="stat"><div class="k">측정 유입 합계 (5~6월)</div><div class="v">${fmt(accepted + held)} ㎥</div></div>
+    <div class="stat"><div class="k">정상 인정</div><div class="v accent">${fmt(accepted)} ㎥</div></div>
+    <div class="stat"><div class="k">지급 보류·점검</div><div class="v ${flagged.length ? "alert" : ""}">${flagged.length}일 · ${fmt(held)} ㎥</div></div>
+    <div class="stat"><div class="k">인정분 포인트 (환급률 ${Math.round(rate * 100)}%)</div><div class="v">${short(pool)}원</div><div class="s">세대당 ${won(pool / site.hh)}</div></div>`;
+  $("vEff").innerHTML = isNaN(st.effHat) ? "" :
+    `정상으로 판정된 비 오는 날 ${st.nOk}일의 측정값으로 추정한 이 단지의 <b>실측 집수율은 ${st.effHat.toFixed(2)}</b>입니다(설계값 0.85). 실측이 쌓이면 단지별 예상치를 이 값으로 보정합니다. 저류조가 가득 차 하수도로 넘친 양은 약 ${fmt(overflow)}㎥입니다.`;
+  $("vTable").innerHTML = flagged.length ? flagged.map(x => `
+    <tr><td>${x.m}/${x.d}</td><td>${x.rain.toFixed(1)}mm</td><td>${fmt(x.est)}㎥</td><td>${fmt(x.maxIn)}㎥</td>
+    <td><span class="pill ${x.flag === "보류" ? "hold" : "check"}">${x.flag}</span></td><td class="why">${x.why}</td></tr>`).join("")
+    : `<tr><td colspan="6" class="empty">이상 사례가 없습니다. 모든 유입이 강수·지붕 면적으로 설명됩니다.</td></tr>`;
+  drawVerify(sim);
+}
+
+function drawVerify(sim) {
+  const { days, V } = sim;
+  const W = 900, H = 330, L = 52, Rm = 14, top = 14, rainH = 80, gap = 26, lvlTop = top + rainH + gap, lvlH = H - lvlTop - 30;
+  const g = $("vChart"); g.innerHTML = ""; g.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const n = days.length, bw = (W - L - Rm) / n, X = i => L + i * bw + bw / 2;
+  const maxRain = Math.max(60, ...days.map(x => x.rain));
+  const rY = v => top + v / maxRain * rainH;                       // 위에서 아래로 내려오는 강수 막대
+  const lY = v => lvlTop + lvlH - v / V * lvlH;
+  days.forEach((x, i) => { if (x.flag) svgEl("rect", { x: L + i * bw, y: top, width: bw, height: H - top - 30, class: x.flag === "보류" ? "fband" : "fband chk" }, g); });
+  svgEl("line", { x1: L, x2: W - Rm, y1: top, y2: top, class: "base" }, g);
+  [0, Math.round(maxRain / 2), Math.round(maxRain)].forEach(v => { txt(g, L - 6, rY(v) + 4, v + "", "ax", "end"); });
+  txt(g, W - Rm, top + rainH - 4, "강수 mm (위에서 아래로)", "ax small", "end");
+  days.forEach((x, i) => { if (x.rain > 0) svgEl("rect", { x: L + i * bw + 1, y: top, width: Math.max(1, bw - 2), height: Math.max(0.5, x.rain / maxRain * rainH), class: "rainbar" }, g); });
+  [0, 0.5, 1].forEach(f => { svgEl("line", { x1: L, x2: W - Rm, y1: lY(f * V), y2: lY(f * V), class: f === 1 ? "capline" : "grid" }, g); txt(g, L - 6, lY(f * V) + 4, fmt(f * V), "ax", "end"); });
+  txt(g, W - Rm, lY(V) - 6, "저류조 용량", "ax small", "end");
+  const d = days.map((x, i) => (i ? "L" : "M") + X(i).toFixed(1) + "," + lY(x.reading).toFixed(1)).join("");
+  svgEl("path", { d, class: "lvl" }, g);
+  days.forEach((x, i) => { if (x.flag) svgEl("circle", { cx: X(i), cy: lY(x.reading), r: 5, class: x.flag === "보류" ? "fdot" : "fdot chk" }, g); });
+  txt(g, L + 4, lvlTop - 8, "저류량 ㎥ (수위 센서)", "ax small", "start");
+  days.forEach((x, i) => { if (x.d === 1 || x.d === 15) txt(g, X(i), H - 10, `${x.m}/${x.d}`); });
+  txt(g, X(n - 1), H - 10, `${days[n - 1].m}/${days[n - 1].d}`);
+}
+$("vNew").addEventListener("click", () => { vSeed = (vSeed * 48271 + 11) % 2147483647; runVerify(); });
+$("injectToggle").addEventListener("change", runVerify);
+
+/* =====================================================================
+   ④ 운영 추천: 계절 편차 + 예보 기반 저류조 운영
+   ===================================================================== */
+function drawMonthly() {
+  const g = $("mChart"); g.innerHTML = "";
+  const W = 720, H = 262, L = 16, Rm = 16, top = 26, bot = 60, n = 12, bw = (W - L - Rm) / n, mx = 450;
+  g.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const Y = v => top + (H - top - bot) * (1 - v / mx);
+  svgEl("line", { x1: L, x2: W - Rm, y1: Y(0), y2: Y(0), class: "base" }, g);
+  const A = siteArea();
+  MONTH_RAIN.forEach((v, i) => {
+    const wet = i >= 5 && i <= 8;
+    svgEl("rect", { x: L + i * bw + 6, y: Y(v), width: bw - 12, height: Y(0) - Y(v), rx: 3, class: wet ? "mbar wet" : "mbar" }, g);
+    txt(g, L + i * bw + bw / 2, Y(v) - 6, v.toFixed(1), wet ? "ax strong" : "ax");
+    txt(g, L + i * bw + bw / 2, H - bot + 16, (i + 1) + "월");
+    txt(g, L + i * bw + bw / 2, H - bot + 32, fmt(v / 1000 * A * RUNOFF), "ax small");
+  });
+  txt(g, L, H - 4, `아래 숫자: 예시 단지(${fmt(site.hh)}세대)에 모일 수 있는 양 ㎥ · 유출계수 0.85`, "ax small", "start");
+  const tot = MONTH_RAIN.reduce((a, b) => a + b, 0);
+  const seasons = [["여름·초가을", "6~9월", [5, 6, 7, 8]], ["봄", "3~5월", [2, 3, 4]], ["가을", "10~11월", [9, 10]], ["겨울", "12~2월", [11, 0, 1]]];
+  $("seasons").innerHTML = seasons.map(([nm, rg, ms], k) => {
+    const v = ms.reduce((s, m) => s + MONTH_RAIN[m], 0);
+    return `<div class="season${k === 0 ? " on" : ""}"><div class="k">${nm} <span>${rg}</span></div><div class="v">${fmt(v)}mm</div><div class="s">연 강수의 ${(v / tot * 100).toFixed(0)}%</div></div>`;
+  }).join("");
+}
+
+const PRESETS = {
+  storm: { label: "호우 예보", rain: [0, 0, 85, 40, 5, 0, 0] },
+  normal: { label: "보통 비", rain: [0, 12, 0, 0, 8, 0, 0] },
+  dry: { label: "건조 7일", rain: [0, 0, 0, 0, 0, 0, 0] },
+};
+let preset = "storm";
+const DAYNAMES = ["오늘", "내일", "모레", "3일 뒤", "4일 뒤", "5일 뒤", "6일 뒤"];
+$("fcInputs").innerHTML = DAYNAMES.map((d, i) => `<label><span>${d}</span><input type="number" min="0" max="400" step="1" id="fc${i}" inputmode="decimal"><i>mm</i></label>`).join("");
+function loadPreset(p) {
+  preset = p; PRESETS[p].rain.forEach((v, i) => $("fc" + i).value = v);
+  document.querySelectorAll("#presetSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.p === p));
+  runOperate();
+}
+document.querySelectorAll("#presetSeg button").forEach(b => b.addEventListener("click", () => loadPreset(b.dataset.p)));
+$("fcInputs").addEventListener("input", () => { document.querySelectorAll("#presetSeg button").forEach(b => b.setAttribute("aria-pressed", "false")); runOperate(); });
+["stock", "dailyUse"].forEach(id => $(id).addEventListener("input", runOperate));
+
+function simulate(s0, rain, use, extra) {
+  const A = siteArea(), V = siteTank();
+  let s = s0; const out = [];
+  rain.forEach((mm, i) => {
+    const inflow = mm / 1000 * A * RUNOFF;
+    const want = (mm >= 5 ? 0 : use) + (extra[i] || 0);
+    let ns = s + inflow; const u = Math.min(want, ns); ns -= u;
+    const over = Math.max(0, ns - V); ns = Math.min(V, ns);
+    out.push({ s: ns, inflow, use: u, over }); s = ns;
+  });
+  return out;
+}
+
+let opPlan = null;
+function runOperate() {
+  const V = siteTank(), A = siteArea();
+  const s0 = Number($("stock").value) / 100 * V;
+  const use = Number($("dailyUse").value);
+  $("stockLabel").textContent = `${$("stock").value}% · ${fmt(s0)}㎥`;
+  $("useLabel").textContent = `${use}㎥/일`;
+  const rain = DAYNAMES.map((d, i) => Math.max(0, Number($("fc" + i).value) || 0));
+  const base = simulate(s0, rain, use, []);
+  const totIn = base.reduce((s, x) => s + x.inflow, 0);
+  const totOver = base.reduce((s, x) => s + x.over, 0);
+  const rate = Number(refundEl.value) / 100;
+  let mode, plan = base, extra = [], gain = 0, planOver = 0, msg = [], firstOver = base.findIndex(x => x.over > 0.5);
+  const totRain = rain.reduce((a, b) => a + b, 0);
+  if (totOver > 0.5) {
+    mode = "storm";
+    // 첫 월류일 전까지(비 오지 않는 날) 저류조를 비워 둘 양: 넘칠 양만큼, 단 그때까지 꺼낼 수 있는 양까지만
+    const pre = []; for (let i = 0; i < Math.max(1, firstOver); i++) if (rain[i] < 5) pre.push(i);
+    if (!pre.length) pre.push(0);
+    const avail = base[pre[pre.length - 1]].s;   // 평소대로 썼을 때 마지막 준비일 끝의 저류량
+    let need = Math.min(totOver, avail);
+    extra = []; pre.forEach(i => extra[i] = need / pre.length);
+    plan = simulate(s0, rain, use, extra);
+    const releaseTot = plan.reduce((s, x) => s + x.use, 0) - base.reduce((s, x) => s + x.use, 0);
+    planOver = plan.reduce((s, x) => s + x.over, 0);
+    gain = Math.max(0, totOver - planOver);
+    const dayTxt = pre.map(i => DAYNAMES[i]).join("·");
+    msg = [
+      `<b>${DAYNAMES[firstOver]}</b>에 저류조가 가득 차 <b>${fmt(totOver)}㎥</b>가 하수도로 넘칠 것으로 예상됩니다.`,
+      `<b>${dayTxt}</b>에 저류조를 <b>${fmt(releaseTot)}㎥</b> 미리 비우면(조경·청소에 먼저 쓰고 남으면 사전 배수) 호우 때 빗물을 <b>${fmt(gain)}㎥</b> 더 받아 하수도 첨두 유입을 줄입니다.` + (planOver > 0.5 ? ` 나머지 ${fmt(planOver)}㎥는 저류조 용량을 넘어 하수도로 갑니다.` : ""),
+      `모인 양 기준 보상이라 이만큼 포인트 풀이 <b>${short(gain * PRICE * rate)}원</b> 늘어납니다(환급률 ${Math.round(rate * 100)}%).`,
+    ];
+  } else if (totRain < 5) {
+    mode = "dry";
+    const daysLeft = use > 0 ? s0 / use : Infinity;
+    const limit = s0 / 14;
+    msg = [
+      `7일 동안 의미 있는 비 예보가 없습니다. 지금 저류량 <b>${fmt(s0)}㎥</b>는 하루 ${use}㎥씩 쓰면 <b>${isFinite(daysLeft) ? daysLeft.toFixed(1) + "일" : "계속"}</b> 버팁니다.`,
+      daysLeft < 14 ? `2주를 버티려면 하루 사용을 <b>${limit.toFixed(1)}㎥</b> 이하로 줄이고, 조경 급수는 이른 아침에 몰아서 하세요.` : `2주 이상 버틸 수 있어 평소대로 써도 됩니다.`,
+      `수돗물로 바꾸는 시점을 미리 정해 두면 비상시 혼란을 줄일 수 있습니다.`,
+    ];
+    if (daysLeft < 14) plan = simulate(s0, rain, limit, []);
+  } else {
+    mode = "normal";
+    const room = V - s0;
+    msg = [
+      `7일 예상 유입은 <b>${fmt(totIn)}㎥</b>이고 저류조 여유는 <b>${fmt(room)}㎥</b>라 넘치지 않습니다.`,
+      `평소대로 운영하면 됩니다. 비 오는 날(5mm 이상)은 조경 급수를 쉬도록 설정되어 있습니다.`,
+    ];
+  }
+  opPlan = { mode, rain, totIn, totOver, gain, s0, use, msg, plan, base, firstOver, rate };
+  $("opStats").innerHTML = `
+    <div class="stat"><div class="k">7일 예상 유입</div><div class="v">${fmt(totIn)} ㎥</div></div>
+    <div class="stat"><div class="k">그대로 두면 넘칠 양</div><div class="v ${totOver > 0.5 ? "alert" : ""}">${fmt(totOver)} ㎥</div></div>
+    <div class="stat"><div class="k">추천대로 하면 더 받는 양</div><div class="v accent">${fmt(gain)} ㎥</div></div>
+    <div class="stat"><div class="k">현재 저류량으로 버티는 기간</div><div class="v">${use > 0 ? (s0 / use).toFixed(1) + "일" : "–"}</div></div>`;
+  $("opMsg").innerHTML = `<div class="pill ${mode === "storm" ? "hold" : mode === "dry" ? "check" : "okp"}">${mode === "storm" ? "호우 전 비우기" : mode === "dry" ? "아껴 쓰기" : "평소 운영"}</div>` + msg.map(m => `<p>${m}</p>`).join("");
+  $("notice").textContent = noticeText(opPlan);
+  $("noticeBadge").textContent = "규칙 기반 문안"; $("noticeBadge").className = "ai-badge";
+  $("noticeBtn").hidden = !sampleCap;
+  drawOperate(opPlan);
+}
+
+function noticeText(p) {
+  const hh = fmt(site.hh);
+  if (p.mode === "storm") return `[관리사무소 안내] ${DAYNAMES[p.firstOver]} 많은 비가 예보되어 빗물 저류조가 가득 찰 것으로 예상됩니다. 비가 오기 전까지 저류조 물을 조경·청소에 먼저 사용합니다. 이렇게 하면 빗물을 약 ${fmt(p.gain)}㎥ 더 모을 수 있고, 모인 양에 따라 레인 포인트가 적립됩니다(${hh}세대 단지 기준).`;
+  if (p.mode === "dry") return `[관리사무소 안내] 앞으로 7일간 비 예보가 없습니다. 저류조 빗물(현재 ${fmt(p.s0)}㎥)을 오래 쓰기 위해 조경 급수를 이른 아침으로 모아 사용량을 줄입니다. 빗물이 바닥나면 수돗물로 전환합니다.`;
+  return `[관리사무소 안내] 이번 주 예상 강수로 빗물 약 ${fmt(p.totIn)}㎥가 저류조에 모일 예정입니다. 저류조 여유가 충분해 평소대로 운영합니다.`;
+}
+
+function drawOperate(p) {
+  const g = $("oChart"); g.innerHTML = "";
+  const W = 720, H = 240, L = 56, Rm = 16, top = 16, bot = 34, V = siteTank();
+  g.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const n = 8, X = i => L + i * (W - L - Rm) / (n - 1), Y = v => top + (H - top - bot) * (1 - v / V);
+  [0, 0.5, 1].forEach(f => { svgEl("line", { x1: L, x2: W - Rm, y1: Y(f * V), y2: Y(f * V), class: f === 1 ? "capline" : "grid" }, g); txt(g, L - 6, Y(f * V) + 4, fmt(f * V), "ax", "end"); });
+  txt(g, W - Rm, Y(V) - 6, "저류조 용량", "ax small", "end");
+  const maxR = Math.max(40, ...p.rain);
+  p.rain.forEach((mm, i) => { if (mm > 0) { const h = mm / maxR * 60; svgEl("rect", { x: X(i + 0.5) - 12, y: top, width: 24, height: h, class: "rainbar" }, g); txt(g, X(i + 0.5), top + h + 12, mm + "mm", "ax small"); } });
+  const line = (arr, cls) => svgEl("path", { d: [p.s0, ...arr.map(x => x.s)].map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + "," + Y(v).toFixed(1)).join(""), class: cls }, g);
+  line(p.base, "lvl ghost");
+  if (p.mode !== "normal") line(p.plan, "lvl");
+  ["지금", ...DAYNAMES.slice(1), "7일 뒤"].slice(0, n).forEach((d, i) => txt(g, X(i), H - 12, d, "ax small"));
+  $("oLegend").innerHTML = p.mode === "normal" ? `<span class="key"><i class="ln ghost"></i>예상 저류량</span>`
+    : `<span class="key"><i class="ln ghost"></i>그대로 운영</span><span class="key"><i class="ln"></i>추천대로 운영</span>`;
+}
+
+$("noticeBtn").addEventListener("click", async () => {
+  if (!sampleCap || !opPlan) return;
+  const p = opPlan, btn = $("noticeBtn"), box = $("notice"), badge = $("noticeBadge");
+  btn.disabled = true; badge.textContent = "생성 중"; badge.className = "ai-badge busy live";
+  const facts = [
+    `단지: ${fmt(site.hh)}세대, 저류조 용량 ${fmt(siteTank())}㎥, 현재 저류량 ${fmt(p.s0)}㎥, 평소 하루 사용 ${p.use}㎥`,
+    `7일 강수 예보(mm): ${p.rain.map((v, i) => DAYNAMES[i] + " " + v).join(", ")}`,
+    `7일 예상 유입 ${fmt(p.totIn)}㎥, 그대로 두면 넘칠 양 ${fmt(p.totOver)}㎥, 추천대로 하면 더 받는 양 ${fmt(p.gain)}㎥`,
+    `운영 판단: ${p.mode === "storm" ? "호우 전 비우기" : p.mode === "dry" ? "아껴 쓰기" : "평소 운영"}`,
+    `판단 근거 문장: ${p.msg.map(m => m.replace(/<[^>]+>/g, "")).join(" ")}`,
+  ].join("\n");
+  const prompt = `너는 아파트 관리사무소 직원이야. 아래 저류조 운영 판단을 주민에게 알리는 게시판·문자 안내문을 써줘.
+[사실]
+${facts}
+[규칙]
+- 3~4문장, 존댓말, 첫머리는 "[관리사무소 안내]".
+- 숫자는 위 [사실]에 있는 값만 그대로 쓰고 새로 계산하거나 지어내지 마.
+- 주민이 할 일이 있으면 한 가지만 분명히 적어. 마크다운·이모지 금지.`;
+  try {
+    const res = await sampleCap(prompt, { modelTier: "quick", onText: ({ text }) => { box.textContent = text; } });
+    box.textContent = (res && res.text || box.textContent).trim();
+    badge.textContent = "Claude 생성"; badge.className = "ai-badge live";
+  } catch (err) {
+    box.textContent = noticeText(p);
+    badge.textContent = err && err.code === "rate_limited" ? "요청이 많아 규칙 기반 문안" : "규칙 기반 문안"; badge.className = "ai-badge";
+  } finally { btn.disabled = false; }
+});
+$("copyNotice").addEventListener("click", async () => {
+  const t = $("notice").textContent;
+  try { await navigator.clipboard.writeText(t); $("copyNotice").textContent = "복사됨"; }
+  catch (e) { const r = document.createRange(); r.selectNodeContents($("notice")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $("copyNotice").textContent = "선택됨 · 복사하세요"; }
+  setTimeout(() => $("copyNotice").textContent = "복사", 1600);
+});
+loadPreset("storm");
+
+paintRamp();
+render();
+setTab(location.hash.slice(1) || "status");
+
+</script>
+
+
+</body>
+</html>

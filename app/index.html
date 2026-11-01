@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>레인 포인트</title>
+<meta name="description" content="우리 아파트에 모인 빗물만큼 관리비를 돌려받는 레인 포인트 주민 앱">
+<meta name="theme-color" content="#13704f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="레인 포인트">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: 휴대폰 한 손 화면. 위 단지 정보 → 카드 → 아래 고정 탭. 관리자 대시보드와 같은 녹색·물색 토큰 */
+:root {
+  --bg: #eef2f0; --card: #ffffff; --ink: #14231c; --sub: #56675e; --faint: #8a9a91;
+  --accent: #13704f; --accent-ink: #ffffff; --soft: #e3ebe6; --line: #d6dfda;
+  --rain: #2f6fa8; --rain-soft: #e1ecf6; --warn: #9a5b12; --warn-soft: #f5ead9; --alert: #b3372b; --alert-soft: #f6e3e0;
+  --font: "IBM Plex Sans KR", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  color-scheme: light;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1613; --card: #16201b; --ink: #e8efeb; --sub: #9fb1a7; --faint: #6f8278;
+  --accent: #4cc99a; --accent-ink: #0f1613; --soft: #1d2a23; --line: #26342d;
+  --rain: #6aa9e0; --rain-soft: #172836; --warn: #e0a55a; --warn-soft: #33291b; --alert: #ef7d6f; --alert-soft: #3a211e; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f1613; --card: #16201b; --ink: #e8efeb; --sub: #9fb1a7; --faint: #6f8278;
+  --accent: #4cc99a; --accent-ink: #0f1613; --soft: #1d2a23; --line: #26342d;
+  --rain: #6aa9e0; --rain-soft: #172836; --warn: #e0a55a; --warn-soft: #33291b; --alert: #ef7d6f; --alert-soft: #3a211e; color-scheme: dark; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.55; font-feature-settings: "tnum"; -webkit-tap-highlight-color: transparent; }
+.app { max-width: 480px; margin: 0 auto; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px calc(84px + env(safe-area-inset-bottom, 0px)); gap: 12px; }
+a { color: var(--accent); }
+button { font: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 9px; }
+.brand img { width: 32px; height: 32px; border-radius: 9px; }
+.brand b { font-size: 17px; letter-spacing: -.3px; }
+.site { font-size: 12.5px; color: var(--sub); }
+.pill { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); white-space: nowrap; }
+.pill.ok { background: var(--soft); color: var(--accent); }
+.pill.rain { background: var(--rain-soft); color: var(--rain); }
+.pill.alert { background: var(--alert-soft); color: var(--alert); }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; gap: 10px; }
+.card h2 { margin: 0; font-size: 13px; color: var(--sub); font-weight: 600; }
+.hero { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.hero h2 { color: inherit; opacity: .85; }
+.big { font-size: 34px; font-weight: 700; letter-spacing: -1px; line-height: 1.1; }
+.big small { font-size: 16px; font-weight: 600; margin-left: 2px; }
+.meter { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--accent-ink) 25%, transparent); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent-ink); border-radius: 4px; }
+.row { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
+.hero .row { opacity: .9; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px; display: grid; gap: 2px; }
+.tile .k { font-size: 12px; color: var(--sub); }
+.tile .v { font-size: 21px; font-weight: 700; letter-spacing: -.4px; }
+.tile .v.rain { color: var(--rain); }
+.tile .s { font-size: 11.5px; color: var(--faint); }
+
+.alert { display: grid; gap: 6px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.alert:last-child { border-bottom: 0; padding-bottom: 2px; }
+.alert:first-child { padding-top: 2px; }
+.alert .h { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.alert .t { font-weight: 700; font-size: 14.5px; }
+.alert .d { font-size: 12px; color: var(--faint); }
+.alert p { margin: 0; font-size: 13.5px; color: var(--sub); }
+.alert p b { color: var(--ink); }
+.linkrow { display: flex; justify-content: space-between; align-items: center; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 600; font-size: 13px; cursor: pointer; }
+
+.chart svg { width: 100%; height: auto; display: block; }
+.ax { fill: var(--sub); font-size: 10.5px; font-family: var(--font); }
+.ax.v { fill: var(--ink); font-weight: 600; }
+.b-done { fill: var(--accent); }
+.b-plan { fill: var(--accent); opacity: .35; }
+.b-off { fill: var(--line); }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--sub); }
+.legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+td { padding: 8px 2px; border-bottom: 1px solid var(--line); }
+td:last-child { text-align: right; font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td.off { color: var(--faint); font-weight: 400; }
+
+ol.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; counter-reset: s; }
+ol.steps li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; font-size: 13.5px; color: var(--sub); }
+ol.steps li::before { counter-increment: s; content: counter(s); width: 24px; height: 24px; border-radius: 50%; background: var(--soft); color: var(--accent); font-weight: 700; font-size: 12.5px; display: grid; place-items: center; }
+ol.steps li b { color: var(--ink); font-size: 15px; display: block; }
+details { border-top: 1px solid var(--line); padding: 10px 0 2px; }
+details:first-of-type { border-top: 0; padding-top: 0; }
+summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+details p { margin: 6px 0 4px; font-size: 13.5px; color: var(--sub); }
+
+.form { display: grid; gap: 10px; }
+.form label { display: grid; gap: 4px; font-size: 12.5px; color: var(--sub); }
+.form select, .form input { font: inherit; font-size: 15px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); width: 100%; }
+.btn { border: 0; border-radius: 12px; padding: 12px 14px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 14.5px; cursor: pointer; }
+.btn.ghost { background: var(--soft); color: var(--ink); }
+.note { font-size: 12px; color: var(--faint); margin: 0; }
+.toast { position: fixed; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); font-size: 13px; padding: 8px 14px; border-radius: 999px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.on { opacity: 1; }
+
+nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line); z-index: 5;
+  padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+nav.tabs .in { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+nav.tabs a { text-decoration: none; color: var(--faint); display: grid; justify-items: center; gap: 2px; padding: 8px 0 9px; font-size: 11.5px; font-weight: 600; position: relative; }
+nav.tabs a svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+nav.tabs a[aria-current="page"] { color: var(--accent); }
+nav.tabs a .dot { position: absolute; top: 6px; left: calc(50% + 8px); width: 7px; height: 7px; border-radius: 50%; background: var(--alert); }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><img src="icons/icon-192.png" alt=""><div><b>레인 포인트</b><div class="site" id="siteLine"></div></div></div>
+    <span class="pill">예시 화면</span>
+  </header>
+
+  <!-- 홈 -->
+  <section data-view="home" class="view">
+    <div style="display:grid;gap:12px">
+      <div class="card hero">
+        <h2 id="heroTitle">올해 우리 집 적립 포인트</h2>
+        <div class="big" id="heroValue">0<small>원</small></div>
+        <div class="meter"><i id="heroMeter"></i></div>
+        <div class="row"><span id="heroSub"></span><span id="heroYear"></span></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><span class="k" id="monthLabel">이번 달 지붕 빗물</span><span class="v rain" id="monthVol">0㎥</span><span class="s">우리 단지 잠재량</span></div>
+        <div class="tile"><span class="k">올해 누적 지붕 빗물</span><span class="v" id="yearVol">0㎥</span><span class="s">하수도로 덜 보낼 수 있는 양</span></div>
+      </div>
+      <div class="card">
+        <div class="linkrow"><h2>최근 알림</h2><button class="linkbtn" data-go="alerts">전체 보기</button></div>
+        <div id="homeAlert"></div>
+      </div>
+      <div class="card">
+        <h2>우리 집 몫은 이렇게 정해져요</h2>
+        <p style="margin:0;font-size:13.5px;color:var(--sub)" id="homeHow"></p>
+        <button class="linkbtn" data-go="guide" style="justify-self:start">계산 과정 보기 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 알림 -->
+  <section data-view="alerts" class="view" hidden>
+    <div class="card"><h2>관리사무소·레인 포인트 알림</h2><div id="alertList"></div></div>
+  </section>
+
+  <!-- 기록 -->
+  <section data-view="history" class="view" hidden>
+    <div style="display:grid;gap:12px">
+      <div class="card chart">
+        <h2>월별 적립 (우리 집)</h2>
+        <svg id="histChart" viewBox="0 0 340 190" role="img" aria-label="월별 적립 포인트 막대그래프"></svg>
+        <div class="legend"><span><i style="background:var(--accent)"></i>적립</span><span><i style="background:var(--accent);opacity:.35"></i>예상</span><span><i style="background:var(--line)"></i>정산 제외(12~2월)</span></div>
+      </div>
+      <div class="card"><h2>월별 내역</h2><table><tbody id="histTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- 안내 -->
+  <section data-view="guide" class="view" hidden>
+    <div style="display:grid;gap:12px">
+      <div class="card"><h2>우리 집 포인트 계산</h2><ol class="steps" id="calcSteps"></ol></div>
+      <div class="card">
+        <h2>자주 묻는 질문</h2>
+        <details open><summary>포인트는 언제 받나요?</summary><p>1년 동안 모인 양으로 정산해 연말 관리비 고지서에서 차감해 드립니다. 비가 여름에 몰려도 1년 단위라 손해가 없습니다.</p></details>
+        <details><summary>겨울에는요?</summary><p>12~2월은 비가 적고 동파 위험이 있어 정산에서 빼고, 저류조 운영을 멈춰도 됩니다.</p></details>
+        <details><summary>수돗물을 넣으면 포인트가 늘어나나요?</summary><p>아니요. 저류조 수위 센서 값과 그날 강수량을 비교해, 비로 설명되지 않는 유입은 자동으로 적립에서 빼고 관리사무소가 확인합니다.</p></details>
+        <details><summary>상한을 넘는 몫은 어디로 가나요?</summary><p>세대당 상한을 넘는 금액은 단지 관리비(공용)로 들어가 모든 세대에 돌아갑니다.</p></details>
+      </div>
+      <div class="card">
+        <h2>우리 단지 설정</h2>
+        <form class="form" id="setForm">
+          <label for="setDong">법정동<select id="setDong"></select></label>
+          <label for="setName">단지 이름<input id="setName" type="text" maxlength="20" placeholder="우리 아파트"></label>
+          <label for="setHH">단지 세대수<input id="setHH" type="number" min="10" max="10000" step="10" inputmode="numeric"></label>
+          <button class="btn" type="submit">저장</button>
+        </form>
+        <button class="btn ghost" id="installBtn" type="button" hidden>홈 화면에 추가</button>
+        <p class="note" id="installNote">아이폰은 Safari 공유 버튼 → ‘홈 화면에 추가’로 앱처럼 설치할 수 있습니다.</p>
+      </div>
+      <p class="note">예시 화면입니다. 금액은 건축HUB 표제부의 동별 공동주택 건축면적과 세대수, 기상청 서울 평년 강수량(1991~2020)으로 계산한 잠재량 기준이며, 알림은 시연용 예시입니다. 정책 조건: 환급률 60%, 세대당 연 상한 11,000원, ㎥당 1,100원.</p>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" aria-label="화면 전환"><div class="in">
+  <a href="#home" data-tab="home"><svg viewBox="0 0 24 24"><path d="M12 3c3.5 4.6 6 7.8 6 11a6 6 0 0 1-12 0c0-3.2 2.5-6.4 6-11z"/></svg>홈</a>
+  <a href="#alerts" data-tab="alerts"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>알림<span class="dot" id="alertDot"></span></a>
+  <a href="#history" data-tab="history"><svg viewBox="0 0 24 24"><path d="M5 20V12M10 20V6M15 20V10M20 20V14"/></svg>기록</a>
+  <a href="#guide" data-tab="guide"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/></svg>안내</a>
+</div></nav>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="dong.js"></script>
+<script>
+/* ---------- 정책 조건(관리자 대시보드 기본값과 같음) ---------- */
+const RAIN = 1417.9, C = 0.85, PRICE = 1100, RATE = 0.6, CAP = 11000;
+const MONTH_RAIN = [16.8, 28.2, 36.9, 72.9, 103.6, 129.5, 414.4, 348.2, 141.5, 52.2, 51.1, 22.6]; // 기상청 서울 평년값 1991~2020
+const SETTLE = [3, 4, 5, 6, 7, 8, 9, 10, 11];      // 정산 대상 월(12~2월 제외)
+const NOW_MONTH = 8;                               // 예시 시점: 8월 말
+const SETTLE_RAIN = SETTLE.reduce((s, m) => s + MONTH_RAIN[m - 1], 0);
+const fmt = n => Math.round(n).toLocaleString("ko-KR");
+const $ = id => document.getElementById(id);
+
+/* ---------- 설정(이 기기에만 저장) ---------- */
+const DEF = { dong: "관악구|봉천동", name: "우리 아파트", hh: 1000 };
+function load() { try { return Object.assign({}, DEF, JSON.parse(localStorage.getItem("rp-site") || "{}")); } catch (e) { return { ...DEF }; } }
+function save(v) { try { localStorage.setItem("rp-site", JSON.stringify(v)); } catch (e) {} }
+let cfg = load();
+if (!DONG.some(d => d[0] + "|" + d[1] === cfg.dong)) cfg.dong = DEF.dong;
+
+function model() {
+  const d = DONG.find(x => x[0] + "|" + x[1] === cfg.dong);
+  const areaPerHH = d[2] / d[3];                       // 이 동 공동주택 세대당 건축면적
+  const area = areaPerHH * cfg.hh;                     // 우리 단지 지붕 면적(추정)
+  const volYear = area * RAIN / 1000 * C;              // 연간 모일 수 있는 빗물
+  const pool = volYear * PRICE * RATE;                 // 단지 포인트 풀
+  const raw = pool / cfg.hh, per = Math.min(raw, CAP); // 세대당 몫, 상한 적용
+  const common = Math.max(0, pool - per * cfg.hh);     // 상한 초과분 → 관리비(공용)
+  const monthVol = m => area * MONTH_RAIN[m - 1] / 1000 * C;
+  const monthPt = m => SETTLE.includes(m) ? per * MONTH_RAIN[m - 1] / SETTLE_RAIN : 0;
+  const tank = area * 0.05;                            // 시행규칙 제4조 최소 용량
+  return { d, areaPerHH, area, volYear, pool, raw, per, common, monthVol, monthPt, tank };
+}
+
+/* ---------- 알림(시연용 예시, 우리 단지 수치로 채움) ---------- */
+function alerts(M) {
+  const storm = 85 / 1000 * M.area * C, space = M.tank * 0.4;
+  const gain = Math.max(0, Math.min(storm - space, M.tank * 0.6));
+  const julPt = M.monthPt(7), julVol = M.monthVol(7);
+  const held = M.tank * 0.06;
+  return [
+    { date: "8월 27일", tag: ["호우 대비", "rain"], title: "내일 많은 비 예보, 저류조를 미리 비웁니다",
+      body: `내일 85mm 안팎의 비가 예보되었습니다. 오늘 저류조 물을 조경·청소에 먼저 써서 비워 두면 빗물을 약 <b>${fmt(gain)}㎥</b> 더 모을 수 있고, 모인 양만큼 포인트가 쌓입니다.` },
+    { date: "8월 5일", tag: ["월간 리포트", "ok"], title: "7월에 빗물 " + fmt(julVol) + "㎥가 모였어요",
+      body: `우리 단지 지붕에서 7월 한 달 약 <b>${fmt(julVol)}㎥</b>가 모였습니다. 우리 집에는 <b>${fmt(julPt)}원</b>이 적립되었습니다.` },
+    { date: "8월 3일", tag: ["확인 중", "alert"], title: "8월 2일 기록 일부를 확인하고 있어요",
+      body: `비가 오지 않은 날 저류조가 약 <b>${fmt(held)}㎥</b> 늘어 이 양은 적립에서 잠시 뺐습니다. 관리사무소 확인 후 빗물로 확인되면 다시 반영됩니다.` },
+  ];
+}
+function alertHTML(a) {
+  return `<div class="alert"><div class="h"><span class="pill ${a.tag[1]}">${a.tag[0]}</span><span class="d">${a.date}</span></div>
+    <div class="t">${a.title}</div><p>${a.body}</p></div>`;
+}
+
+/* ---------- 그리기 ---------- */
+function render() {
+  const M = model();
+  $("siteLine").textContent = `${M.d[0]} ${M.d[1]} · ${cfg.name || "우리 아파트"} ${fmt(cfg.hh)}세대`;
+  const sofar = SETTLE.filter(m => m <= NOW_MONTH).reduce((s, m) => s + M.monthPt(m), 0);
+  $("heroTitle").textContent = `${NOW_MONTH}월 말까지 우리 집 적립 포인트`;
+  $("heroValue").innerHTML = `${fmt(sofar)}<small>원</small>`;
+  $("heroMeter").style.width = (M.per ? sofar / M.per * 100 : 0) + "%";
+  $("heroSub").textContent = "연말 관리비에서 차감";
+  $("heroYear").textContent = `올해 예상 ${fmt(M.per)}원`;
+  $("monthLabel").textContent = `${NOW_MONTH}월 지붕 빗물`;
+  $("monthVol").textContent = fmt(M.monthVol(NOW_MONTH)) + "㎥";
+  $("yearVol").textContent = fmt(SETTLE.filter(m => m <= NOW_MONTH).reduce((s, m) => s + M.monthVol(m), 0)) + "㎥";
+  const al = alerts(M);
+  $("homeAlert").innerHTML = alertHTML(al[0]);
+  $("alertList").innerHTML = al.map(alertHTML).join("");
+  $("homeHow").innerHTML = `우리 단지 지붕에 1년 동안 모일 빗물은 약 ${fmt(M.volYear)}㎥입니다. 이 빗물값의 60%를 ${fmt(cfg.hh)}세대가 나누면 한 세대에 ${fmt(M.raw)}원이고, ` +
+    (M.raw > CAP ? `상한 ${fmt(CAP)}원을 넘는 부분은 단지 관리비로 들어갑니다.` : `상한 ${fmt(CAP)}원 안이라 전액 우리 집 몫입니다.`);
+  // 계산 과정
+  $("calcSteps").innerHTML = [
+    [`지붕 면적 ${fmt(M.area)}㎡`, `${M.d[1]} 공동주택의 세대당 건축면적 ${M.areaPerHH.toFixed(1)}㎡ × ${fmt(cfg.hh)}세대`],
+    [`1년에 모일 빗물 ${fmt(M.volYear)}㎥`, `서울 평년 강수량 ${RAIN.toLocaleString("ko-KR")}mm × 지붕 면적 × 0.85(지붕에서 실제로 흘러 모이는 비율)`],
+    [`단지 포인트 ${fmt(M.pool)}원`, `빗물 ㎥당 ${fmt(PRICE)}원(상하수도 요금 수준으로 잡은 추정 단가) × 환급률 60%`],
+    [`우리 집 ${fmt(M.per)}원`, `단지 포인트 ÷ ${fmt(cfg.hh)}세대 = ${fmt(M.raw)}원, 세대당 연 상한 ${fmt(CAP)}원 적용` + (M.common > 0 ? `. 넘는 ${fmt(M.common)}원은 관리비(공용)로` : "")],
+  ].map(([b, s]) => `<li><span><b>${b}</b>${s}</span></li>`).join("");
+  drawHist(M);
+}
+
+function drawHist(M) {
+  const g = $("histChart"); g.innerHTML = "";
+  const NS = "http://www.w3.org/2000/svg", W = 340, H = 190, L = 6, R = 6, top = 22, bot = 26;
+  const vals = Array.from({ length: 12 }, (_, i) => M.monthPt(i + 1));
+  const mx = Math.max(...vals, 1), bw = (W - L - R) / 12;
+  const mk = (tag, a) => { const n = document.createElementNS(NS, tag); for (const k in a) n.setAttribute(k, a[k]); g.appendChild(n); return n; };
+  vals.forEach((v, i) => {
+    const m = i + 1, off = !SETTLE.includes(m), h = off ? 3 : Math.max(2, v / mx * (H - top - bot));
+    const x = L + i * bw + 3, y = H - bot - h;
+    mk("rect", { x, y, width: bw - 6, height: h, rx: 3, class: off ? "b-off" : m <= NOW_MONTH ? "b-done" : "b-plan" });
+    const t = mk("text", { x: x + (bw - 6) / 2, y: H - 9, "text-anchor": "middle", class: "ax" }); t.textContent = m + "월";
+    if (!off && v >= mx * 0.3) { const tv = mk("text", { x: x + (bw - 6) / 2, y: y - 5, "text-anchor": "middle", class: "ax v" }); tv.textContent = fmt(v); }
+  });
+  $("histTable").innerHTML = vals.map((v, i) => {
+    const m = i + 1, off = !SETTLE.includes(m);
+    return `<tr><td>${m}월${m > NOW_MONTH && !off ? " (예상)" : ""}</td><td class="${off ? "off" : ""}">${off ? "정산 제외" : fmt(v) + "원"}</td></tr>`;
+  }).join("");
+}
+
+/* ---------- 화면 전환 ---------- */
+const VIEWS = ["home", "alerts", "history", "guide"];
+function show() {
+  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
+  document.querySelectorAll(".view").forEach(s => s.hidden = s.dataset.view !== v);
+  document.querySelectorAll("nav.tabs a").forEach(a => a.setAttribute("aria-current", a.dataset.tab === v ? "page" : "false"));
+  if (v === "alerts") { try { localStorage.setItem("rp-seen", "1"); } catch (e) {} $("alertDot").hidden = true; }
+  window.scrollTo(0, 0);
+}
+window.addEventListener("hashchange", show);
+document.addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b) location.hash = b.dataset.go; });
+try { $("alertDot").hidden = localStorage.getItem("rp-seen") === "1"; } catch (e) {}
+
+/* ---------- 설정 폼 ---------- */
+$("setDong").innerHTML = DONG.map(d => `<option value="${d[0]}|${d[1]}">${d[0]} ${d[1]}</option>`).join("");
+function fillForm() { $("setDong").value = cfg.dong; $("setName").value = cfg.name; $("setHH").value = cfg.hh; }
+$("setForm").addEventListener("submit", e => {
+  e.preventDefault();
+  cfg = { dong: $("setDong").value, name: $("setName").value.trim() || DEF.name, hh: Math.max(10, Math.min(10000, Number($("setHH").value) || DEF.hh)) };
+  save(cfg); render(); toast("저장했습니다");
+});
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("on"); setTimeout(() => el.classList.remove("on"), 1600); }
+
+/* ---------- 설치(PWA) ---------- */
+let deferred = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; $("installBtn").hidden = false; });
+$("installBtn").addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice.catch(() => {}); deferred = null; $("installBtn").hidden = true; });
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+
+fillForm(); render(); show();
+</script>
+</body>
+</html>
